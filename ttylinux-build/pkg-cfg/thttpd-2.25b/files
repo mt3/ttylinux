@@ -1,0 +1,5 @@
+etc/rc.d/init.d/thttpd
+etc/thttpd.conf
+home/thttpd
+usr/bin/makeweb
+usr/sbin/thttpd

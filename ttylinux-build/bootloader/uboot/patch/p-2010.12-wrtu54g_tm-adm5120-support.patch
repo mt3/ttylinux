@@ -1,0 +1,3228 @@
+diff --git a/MAKEALL b/MAKEALL
+index 74bf383..033b077 100755
+--- a/MAKEALL
++++ b/MAKEALL
+@@ -249,7 +249,7 @@ ########################################
+ ## MIPS Systems		(little endian)
+ #########################################################################
+ 
+-LIST_mips4kc_el=""
++LIST_mips4kc_el="adm5120"
+ 
+ LIST_mips5kc_el=""
+ 
+diff --git a/Makefile b/Makefile
+index d2534ab..592fd50 100644
+--- a/Makefile
++++ b/Makefile
+@@ -2121,6 +2121,11 @@ incaip_config: unconfig
+ tb0229_config: unconfig
+ 	@$(MKCONFIG) $(@:_config=) mips mips tb0229
+ 
++adm5120_config: unconfig
++	@mkdir -p $(obj)include
++	@ >$(obj)include/config.h
++	@$(MKCONFIG) $(@:_config=) mips mips adm5120
++
+ #########################################################################
+ ## MIPS32 AU1X00
+ #########################################################################
+diff --git a/board/adm5120/Makefile b/board/adm5120/Makefile
+new file mode 100644
+index 0000000..20ef1be
+--- /dev/null
++++ b/board/adm5120/Makefile
+@@ -0,0 +1,41 @@
++# (C) Copyright 2006
++# Robert Delien, <robert@delien.nl>
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation; either version 2 of
++# the License, or (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++# MA 02111-1307 USA
++#
++
++include $(TOPDIR)/config.mk
++
++LIB	= $(obj)lib$(BOARD).a
++
++COBJS	= $(BOARD).o
++SOBJS	= memsetup.o
++
++SRCS	:= $(SOBJS:.o=.S) $(COBJS:.o=.c)
++OBJS	:= $(addprefix $(obj),$(COBJS))
++SOBJS	:= $(addprefix $(obj),$(SOBJS))
++
++$(LIB):	$(obj).depend $(OBJS) $(SOBJS)
++	$(AR) $(ARFLAGS) $@ $(OBJS) $(SOBJS)
++
++#########################################################################
++
++# defines $(obj).depend target
++include $(SRCTREE)/rules.mk
++
++sinclude $(obj).depend
++
++#########################################################################
+diff --git a/board/adm5120/adm5120.c b/board/adm5120/adm5120.c
+new file mode 100755
+index 0000000..ea5593f
+--- /dev/null
++++ b/board/adm5120/adm5120.c
+@@ -0,0 +1,65 @@
++/*
++ * Board initialize code for ADMtek/Infineon adm5120 SoC.
++ *
++ * (C) Copyright 2006
++ * Robert Delien, <robert@delien.nl>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#include <common.h>
++#include <command.h>
++#include <adm51xx_switch.h>
++#include <asm/io.h>
++
++#if defined(CONFIG_PCI)
++static struct pci_controller hose;
++
++void pci_init_board (void)
++{
++}
++#endif
++
++
++long int initdram(int board_type)
++{
++/*	TODO: Make this work with CFG_SDRAM_MAX */
++	return get_ram_size ((void*)CFG_SDRAM_BASE, 16*1024*1024);
++}
++
++
++int checkboard (void)
++{
++	unsigned int value;
++	unsigned int mask;
++
++	printf("SoC:   Infineon ADM5120");
++	if (readl(SWITCH + SWITCH_CODE) & SWITCH_CODE__PK)
++		printf("/PQFP");
++	else
++		printf("/BGA");
++	printf(" @%dMHz ", (int)CPU_CLOCK_RATE/1000000);
++
++	mask = SWITCH_CODE__REV ;
++	value = readl(SWITCH + SWITCH_CODE) & mask ;
++	while ((mask & 1) == 0) {
++		mask >>= 1 ;
++		value >>= 1 ;
++	}
++	printf("(Rev: %04X)\n", value);
++
++	return 0;
++}
+diff --git a/board/adm5120/config.mk b/board/adm5120/config.mk
+new file mode 100644
+index 0000000..159de89
+--- /dev/null
++++ b/board/adm5120/config.mk
+@@ -0,0 +1,24 @@
++# (C) Copyright 2006
++# Robert Delien, <robert@delien.nl>
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation; either version 2 of
++# the License, or (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++# MA 02111-1307 USA
++#
++
++# ROM version
++TEXT_BASE = 0xBFC00000
++
++# RAM version, for debugging purposes
++#TEXT_BASE = 0xA0010000
+diff --git a/board/adm5120/memsetup.S b/board/adm5120/memsetup.S
+new file mode 100644
+index 0000000..4e6ce8d
+--- /dev/null
++++ b/board/adm5120/memsetup.S
+@@ -0,0 +1,256 @@
++/*
++ * Low level initialization routine for ADMtek/Infineon adm5120 SoC.
++ *
++ * (C) Copyright 2006
++ * Robert Delien, <robert@delien.nl>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ *
++ *
++ * Reverse-engineered from register contents of adm5120 in
++ * Sweex LB000021 'Broadband router' and Infineon data sheet.
++ */
++
++
++#include <config.h>
++#include <version.h>
++#include <asm/regdef.h>
++#include <asm/mipsregs.h>
++#include <adm5120_mpmc.h>
++#include <adm51xx_switch.h>
++
++	.globl  lowlevel_init
++lowlevel_init:
++	/* Setup pointers */
++	la	a0, MPMC
++	la	a1, SWITCH
++
++	/*
++	 * Initialize SRAM/ROM
++	 */
++
++	/* Set MEM_CONT__SR0S to 2MiB, enable MEM_CONT__SDR1E, set MEM_CONT__SDRS to 4Mib x32*/
++	li	t0, (SWITCH_MEM_CONT__SR0S_2MB |	\
++		     SWITCH_MEM_CONT__SDR1E |		\
++		     SWITCH_MEM_CONT__SDRS_4Mx32)
++	sw	t0, SWITCH_MEM_CONT(a1)
++
++	/* MPMC_SC1 */
++	li	t0, (MPMC_SCx__BLS |			\
++		     MPMC_SCx__MW_16BIT)
++	sw	t0, MPMC_SC1(a0)
++	/* MPMC_SWW1 */
++	li	t0, (MPMC_SWWx__WWE & 0)
++	sw	t0, MPMC_SWW1(a0)
++	/* MPMC_SWO1 */
++	li	t0, (MPMC_SWOx__SWO0 & 0)
++	sw	t0, MPMC_SWO1(a0)
++	/* MPMC_SWR1 */
++	li	t0, (MPMC_SWRx__NMRW & 9)
++	sw	t0, MPMC_SWR1(a0)
++	/* MPMC_SWP1 */
++	li	t0, (MPMC_SWPx__WPS & 31)
++	sw	t0, MPMC_SWP1(a0)
++	/* MPMC_SWWR1 */
++	li	t0, (MPMC_SWWRx__WWS & 9)
++	sw	t0, MPMC_SWWR1(a0)
++	/* MPMC_SWT1 */
++	li	t0, (MPMC_SWTx__WAITTURN & 5)
++	sw	t0, MPMC_SWT1(a0)
++
++#if (TEXT_BASE >= 0xBFC00000)
++	/*
++	 * Initialize SDRAM (if running from ROM)
++	 */
++
++	/* Disable address mirroring bit */
++	lw	t0, MPMC_C(a0)
++	li	t1, ~(MPMC_C__AM)
++	and	t0, t0, t1
++	sw	t0, MPMC_C(a0)
++
++	/* Set MPMC_DRP__PCP to 1 */
++	li	t0, (MPMC_DRP__PCP & 1)
++	sw	t0, MPMC_DRP(a0)
++	/* Set MPMC_DRAS__APCP to 4 */
++	li	t0, (MPMC_DRAS__APCP & 4)
++	sw	t0, MPMC_DRAS(a0)
++	/* Set MPMC_DSREX__SRET to 16 */
++	li	t0, (MPMC_DSREX__SRET & 15)
++	sw	t0, MPMC_DSREX(a0)
++	/* Set MPMC_DAPR__LACT */
++	li	t0, (MPMC_DAPR__LACT & 1)
++	sw	t0, MPMC_DAPR(a0)
++	/* Set MPMC_DDAL__DACT */
++	li	t0, (MPMC_DDAL__DACT & 3)
++	sw	t0, MPMC_DDAL(a0)
++	/* Set MPMC_DWR__WRT */
++	li	t0, (MPMC_DWR__WRT & 1)
++	sw	t0, MPMC_DWR(a0)
++	/* Set MPMC_DRC__AACP */
++	li	t0, (MPMC_DRC__AACP & 6)
++	sw	t0, MPMC_DRC(a0)
++	/* Set MPMC_DRFC__ARACP */
++	li	t0, (MPMC_DRFC__ARACP & 6)
++	sw	t0, MPMC_DRFC(a0)
++	/* Set MPMC_DXSR__EACP */
++	li	t0, (MPMC_DXSR__EACP & 7)
++	sw	t0, MPMC_DXSR(a0)
++	/* Set MPMC_DRRD__ABL */
++	li	t0, (MPMC_DRRD__ABL & 1)
++	sw	t0, MPMC_DRRD(a0)
++	/* Set MPMC_DMRD__LACT */
++	li	t0, (MPMC_DMRD__LACT & 1)
++	sw	t0, MPMC_DMRD(a0)
++
++	/* Switch to normal mode of operation, enable continueos clock, enable clock drive high */
++	lw	t0, MPMC_DC(a0)
++	li	t1, ~(MPMC_DC__SI)
++	and	t0, t0, t1
++	li	t1, (MPMC_DC__SI_NORMAL |	\
++		     MPMC_DC__DMC | 		\
++		     MPMC_DC__CE)
++	or	t0, t0, t1
++	sw	t0, MPMC_DC(a0)
++
++	/* Disable bank 0 buffers */
++	lw	t0, MPMC_DC0(a0)
++	li	t1, ~(MPMC_DCx__BE)
++	and	t0, t0, t1
++	sw	t0, MPMC_DC0(a0)
++
++	/* Disable bank 1 buffers */
++	lw	t0, MPMC_DC1(a0)
++	li	t1, ~(MPMC_DCx__BE)
++	and	t0, t0, t1
++	sw	t0, MPMC_DC1(a0)
++
++	/* Wait for 1ms to make sure SDRAM power and clocks have stabilized */
++	mtc0	zero, CP0_COUNT
++	li	t0, CFG_CP0_COUNT_RATE/1000
++1:
++	mfc0	t1, CP0_COUNT
++	ble	t1, t0, 1b
++	nop
++
++	/* Issue a NOP instruction to SDRAM modules */
++	lw	t0, MPMC_DC(a0)
++	li	t1, ~(MPMC_DC__SI)
++	and	t0, t0, t1
++	li	t1, MPMC_DC__SI_NOP
++	or	t0, t0, t1
++	sw	t0, MPMC_DC(a0)
++
++	/* Wait 200us for NOP instruction to execute */
++	mtc0	zero, CP0_COUNT
++	li	t0, CFG_CP0_COUNT_RATE/5000
++1:
++	mfc0	t1, CP0_COUNT
++	ble	t1, t0, 1b
++	nop
++
++	/* Precharge all SDRAM modules */
++	lw	t0, MPMC_DC(a0)
++	li	t1, ~(MPMC_DC__SI)
++	and	t0, t0, t1
++	li	t1, MPMC_DC__SI_PALL
++	or	t0, t0, t1
++	sw	t0, MPMC_DC(a0)
++
++	/* Set dynamic refresh to every 32 HCLK cycles */
++	li	t0, (MPMC_DR__RT & (32/0x10))
++	sw	t0, MPMC_DR(a0)
++
++	/* Wait 128 AHB cycles */
++	li	t0,64
++1:
++	nop
++	nop
++	nop
++	nop
++	nop
++	addiu	t0,t0,-1
++	bnez	t0,1b
++	nop
++
++	/* Set dynamic refresh to every 1360 HCLK cycles */
++	li	t0, (MPMC_DR__RT & (1360/0x10))
++	sw	t0, MPMC_DR(a0)
++
++	/* Set MPMC_DRC0__CASL and MPMC_DRC0__RASL to 2 */
++	li	t0, 0x00000202
++	sw	t0, MPMC_DRC0(a0)
++
++	/* Set MPMC_DC0 to 0x14804500 */
++	li	t0, 0x14804500
++	sw	t0, MPMC_DC0(a0)
++
++#if (CONFIG_NR_DRAM_BANKS > 1)
++	/* Set MPMC_DRC1__CASL and MPMC_DRC1__RASL to 2 */
++	li	t0, 0x00000202
++	sw	t0, MPMC_DRC1(a0)
++
++	/* Set MPMC_DC1 to 0x14804500 */
++	li	t0, 0x14804500
++	sw	t0, MPMC_DC1(a0)
++#endif /* (CONFIG_NR_DRAM_BANKS > 1) */
++
++	/* Switch to mode programming mode */
++	lw	t0, MPMC_DC(a0)
++	li	t1, ~(MPMC_DC__SI)
++	and	t0, t0, t1
++	li	t1, MPMC_DC__SI_MODE
++	or	t0, t0, t1
++	sw	t0, MPMC_DC(a0)
++
++	/* Set mode of bank 0 */
++	li	t0,0xA0022000
++	lw	t1,0(t0)
++
++#if (CONFIG_NR_DRAM_BANKS > 1)
++	/* Set mode of bank 1 */
++	li	t0,0xA1022000
++	lw	t1,0(t0)
++#endif /* (CONFIG_NR_DRAM_BANKS > 1) */
++
++	/* Switch to normal operation mode, use dynamic memory clock */
++	lw	t0, MPMC_DC(a0)
++	li	t1, ~(MPMC_DC__SI)
++	and	t0, t0, t1
++	li	t1, ~(MPMC_DC__CE)
++	and	t0, t0, t1
++	ori	t0, t0, MPMC_DC__SI_NORMAL
++	sw	t0, MPMC_DC(a0)
++
++	/* Enable buffers bank 0 */
++	lw	t0, MPMC_DC0(a0)
++	li	t1, MPMC_DCx__BE
++	or	t0, t0, t1
++	sw	t0, MPMC_DC0(a0)
++
++#if (CONFIG_NR_DRAM_BANKS > 1)
++	/* Enable buffers bank 1 */
++	lw	t0, MPMC_DC1(a0)
++	li	t1, MPMC_DCx__BE
++	or	t0, t0, t1
++	sw	t0,MPMC_DC1(a0)
++#endif /* (CONFIG_NR_DRAM_BANKS > 1) */
++
++#endif /* TEXT_BASE == 0xBFC00000 */
++
++	j       ra
++	nop
++
+diff --git a/board/adm5120/u-boot.lds b/board/adm5120/u-boot.lds
+new file mode 100644
+index 0000000..d2d47ff
+--- /dev/null
++++ b/board/adm5120/u-boot.lds
+@@ -0,0 +1,65 @@
++/*
++ * (C) Copyright 2006
++ * Robert Delien, <robert@delien.nl>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++OUTPUT_FORMAT("elf32-tradlittlemips", "elf32-tradlittlemips", "elf32-tradlittlemips")
++
++OUTPUT_ARCH(mips)
++ENTRY(_start)
++SECTIONS
++{
++	. = 0x00000000;
++
++	. = ALIGN(4);
++	.text       :
++	{
++	  *(.text)
++	}
++
++	. = ALIGN(4);
++	.rodata  : { *(.rodata) }
++
++	. = ALIGN(4);
++	.data  : { *(.data) }
++
++	. = ALIGN(4);
++	.sdata  : { *(.sdata) }
++
++	. = ALIGN(16);
++	_gp = .;
++
++	__got_start = .;
++	.got  : { *(.got) }
++	__got_end = .;
++
++	.sdata  : { *(.sdata) }
++
++	. = .;
++	__u_boot_cmd_start = .;
++	.u_boot_cmd : { *(.u_boot_cmd) }
++	__u_boot_cmd_end = .;
++
++	uboot_end_data = .;
++	num_got_entries = (__got_end - __got_start) >> 2;
++
++	. = ALIGN(4);
++	.sbss  : { *(.sbss) }
++	.bss  : { *(.bss) }
++	uboot_end = .;
++}
+diff --git a/board/dbau1x00/u-boot.lds b/board/dbau1x00/u-boot.lds
+index 10c9917..150ae75 100644
+--- a/board/dbau1x00/u-boot.lds
++++ b/board/dbau1x00/u-boot.lds
+@@ -46,7 +46,8 @@ SECTIONS
+ 	. = ALIGN(4);
+ 	.sdata  : { *(.sdata) }
+ 
+-	_gp = ALIGN(16);
++	. = ALIGN(16);
++	_gp = .;
+ 
+ 	__got_start = .;
+ 	.got  : { *(.got) }
+diff --git a/board/gth2/u-boot.lds b/board/gth2/u-boot.lds
+index 8ba0b6d..fa27e96 100644
+--- a/board/gth2/u-boot.lds
++++ b/board/gth2/u-boot.lds
+@@ -46,7 +46,8 @@ SECTIONS
+ 	. = ALIGN(4);
+ 	.sdata  : { *(.sdata) }
+ 
+-	_gp = ALIGN(16);
++	. = ALIGN(16);
++	_gp = .;
+ 
+ 	__got_start = .;
+ 	.got  : { *(.got) }
+diff --git a/board/incaip/u-boot.lds b/board/incaip/u-boot.lds
+index 10c9917..150ae75 100644
+--- a/board/incaip/u-boot.lds
++++ b/board/incaip/u-boot.lds
+@@ -46,7 +46,8 @@ SECTIONS
+ 	. = ALIGN(4);
+ 	.sdata  : { *(.sdata) }
+ 
+-	_gp = ALIGN(16);
++	. = ALIGN(16);
++	_gp = .;
+ 
+ 	__got_start = .;
+ 	.got  : { *(.got) }
+diff --git a/board/mcc200/Makefile b/board/mcc200/Makefile
+index 75808cb..5869119 100644
+--- a/board/mcc200/Makefile
++++ b/board/mcc200/Makefile
+@@ -25,7 +25,7 @@ include $(TOPDIR)/config.mk
+ 
+ LIB	= $(obj)lib$(BOARD).a
+ 
+-COBJS	:= $(BOARD).o lcd.o
++COBJS	:= $(BOARD).o lcd.o auto_update.o
+ 
+ SRCS	:= $(SOBJS:.o=.S) $(COBJS:.o=.c)
+ OBJS	:= $(addprefix $(obj),$(COBJS))
+diff --git a/board/mcc200/auto_update.c b/board/mcc200/auto_update.c
+new file mode 100644
+index 0000000..786543e
+--- /dev/null
++++ b/board/mcc200/auto_update.c
+@@ -0,0 +1,469 @@
++/*
++ * (C) Copyright 2006
++ * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++#include <common.h>
++#include <command.h>
++#include <malloc.h>
++#include <image.h>
++#include <asm/byteorder.h>
++#include <usb.h>
++
++#ifdef CFG_HUSH_PARSER
++#include <hush.h>
++#endif
++
++
++#ifdef CONFIG_AUTO_UPDATE
++
++#ifndef CONFIG_USB_OHCI
++#error "must define CONFIG_USB_OHCI"
++#endif
++
++#ifndef CONFIG_USB_STORAGE
++#error "must define CONFIG_USB_STORAGE"
++#endif
++
++#ifndef CFG_HUSH_PARSER
++#error "must define CFG_HUSH_PARSER"
++#endif
++
++#if !(CONFIG_COMMANDS & CFG_CMD_FAT)
++#error "must define CFG_CMD_FAT"
++#endif
++
++/*
++ * Check whether a USB memory stick is plugged in.
++ * If one is found:
++ *	1) if prepare.img ist found load it into memory. If it is
++ *		valid then run it.
++ *	2) if preinst.img is found load it into memory. If it is
++ *		valid then run it. Update the EEPROM.
++ *	3) if firmw_01.img is found load it into memory. If it is valid,
++ *		burn it into FLASH and update the EEPROM.
++ *	4) if kernl_01.img is found load it into memory. If it is valid,
++ *		burn it into FLASH and update the EEPROM.
++ *	5) if app.img is found load it into memory. If it is valid,
++ *		burn it into FLASH and update the EEPROM.
++ *	6) if disk.img is found load it into memory. If it is valid,
++ *		burn it into FLASH and update the EEPROM.
++ *	7) if postinst.img is found load it into memory. If it is
++ *		valid then run it. Update the EEPROM.
++ */
++
++#undef AU_DEBUG
++
++#undef debug
++#ifdef	AU_DEBUG
++#define debug(fmt,args...)	printf (fmt ,##args)
++#else
++#define debug(fmt,args...)
++#endif	/* AU_DEBUG */
++
++/* possible names of files on the USB stick. */
++#define AU_FIRMWARE	"u-boot.img"
++#define AU_KERNEL	"kernel.img"
++
++struct flash_layout
++{
++	long start;
++	long end;
++};
++
++/* layout of the FLASH. ST = start address, ND = end address. */
++#define AU_FL_FIRMWARE_ST	0xfC000000
++#define AU_FL_FIRMWARE_ND	0xfC03FFFF
++#define AU_FL_KERNEL_ST		0xfC0C0000
++#define AU_FL_KERNEL_ND		0xfC1BFFFF
++
++static int au_usb_stor_curr_dev; /* current device */
++
++/* index of each file in the following arrays */
++#define IDX_FIRMWARE	0
++#define IDX_KERNEL	1
++
++/* max. number of files which could interest us */
++#define AU_MAXFILES 2
++
++/* pointers to file names */
++char *aufile[AU_MAXFILES];
++
++/* sizes of flash areas for each file */
++long ausize[AU_MAXFILES];
++
++/* array of flash areas start and end addresses */
++struct flash_layout aufl_layout[AU_MAXFILES] = { \
++	{AU_FL_FIRMWARE_ST, AU_FL_FIRMWARE_ND,}, \
++	{AU_FL_KERNEL_ST, AU_FL_KERNEL_ND,}, \
++};
++
++/* where to load files into memory */
++#define LOAD_ADDR ((unsigned char *)0x00200000)
++
++/* the app is the largest image */
++#define MAX_LOADSZ ausize[IDX_KERNEL]
++
++/*i2c address of the keypad status*/
++#define I2C_PSOC_KEYPAD_ADDR	0x53
++
++/* keypad mask */
++#define KEYPAD_ROW	3
++#define KEYPAD_COL	3
++#define KEYPAD_MASK_LO	((1<<(KEYPAD_COL-1+(KEYPAD_ROW*4-4)))&0xFF)
++#define KEYPAD_MASK_HI	((1<<(KEYPAD_COL-1+(KEYPAD_ROW*4-4)))>>8)
++
++/* externals */
++extern int fat_register_device(block_dev_desc_t *, int);
++extern int file_fat_detectfs(void);
++extern long file_fat_read(const char *, void *, unsigned long);
++extern int i2c_read (unsigned char, unsigned int, int , unsigned char* , int);
++extern int flash_sect_erase(ulong, ulong);
++extern int flash_sect_protect (int, ulong, ulong);
++extern int flash_write (char *, ulong, ulong);
++/* change char* to void* to shutup the compiler */
++extern block_dev_desc_t *get_dev (char*, int);
++extern int u_boot_hush_start(void);
++
++int
++au_check_cksum_valid(int idx, long nbytes)
++{
++	image_header_t *hdr;
++	unsigned long checksum;
++
++	hdr = (image_header_t *)LOAD_ADDR;
++
++	if (nbytes != (sizeof(*hdr) + ntohl(hdr->ih_size)))
++	{
++		printf ("Image %s bad total SIZE\n", aufile[idx]);
++		return -1;
++	}
++	/* check the data CRC */
++	checksum = ntohl(hdr->ih_dcrc);
++
++	if (crc32 (0, (uchar *)(LOAD_ADDR + sizeof(*hdr)), ntohl(hdr->ih_size))
++		!= checksum)
++	{
++		printf ("Image %s bad data checksum\n", aufile[idx]);
++		return -1;
++	}
++	return 0;
++}
++
++int
++au_check_header_valid(int idx, long nbytes)
++{
++	image_header_t *hdr;
++	unsigned long checksum;
++	unsigned char buf[4];
++
++	hdr = (image_header_t *)LOAD_ADDR;
++	/* check the easy ones first */
++#undef CHECK_VALID_DEBUG
++#ifdef CHECK_VALID_DEBUG
++	printf("magic %#x %#x ", ntohl(hdr->ih_magic), IH_MAGIC);
++	printf("arch %#x %#x ", hdr->ih_arch, IH_CPU_ARM);
++	printf("size %#x %#lx ", ntohl(hdr->ih_size), nbytes);
++	printf("type %#x %#x ", hdr->ih_type, IH_TYPE_KERNEL);
++#endif
++	if (nbytes < sizeof(*hdr))
++	{
++		printf ("Image %s bad header SIZE\n", aufile[idx]);
++		return -1;
++	}
++	if (ntohl(hdr->ih_magic) != IH_MAGIC || hdr->ih_arch != IH_CPU_PPC)
++	{
++		printf ("Image %s bad MAGIC or ARCH\n", aufile[idx]);
++		return -1;
++	}
++	/* check the hdr CRC */
++	checksum = ntohl(hdr->ih_hcrc);
++	hdr->ih_hcrc = 0;
++
++	if (crc32 (0, (uchar *)hdr, sizeof(*hdr)) != checksum) {
++		printf ("Image %s bad header checksum\n", aufile[idx]);
++		return -1;
++	}
++	hdr->ih_hcrc = htonl(checksum);
++	/* check the type - could do this all in one gigantic if() */
++	if ((idx == IDX_FIRMWARE) && (hdr->ih_type != IH_TYPE_FIRMWARE)) {
++		printf ("Image %s wrong type\n", aufile[idx]);
++		return -1;
++	}
++	if ((idx == IDX_KERNEL) && (hdr->ih_type != IH_TYPE_KERNEL)) {
++		printf ("Image %s wrong type\n", aufile[idx]);
++		return -1;
++	}
++	/* recycle checksum */
++	checksum = ntohl(hdr->ih_size);
++	/* for kernel and app the image header must also fit into flash */
++	if (idx != IDX_FIRMWARE)
++		checksum += sizeof(*hdr);
++	/* check the size does not exceed space in flash. HUSH scripts */
++	/* all have ausize[] set to 0 */
++	if ((ausize[idx] != 0) && (ausize[idx] < checksum)) {
++		printf ("Image %s is bigger than FLASH\n", aufile[idx]);
++		return -1;
++	}
++	return 0;
++}
++
++
++int
++au_do_update(int idx, long sz)
++{
++	image_header_t *hdr;
++	char *addr;
++	long start, end;
++	int off, rc;
++	uint nbytes;
++
++	hdr = (image_header_t *)LOAD_ADDR;
++
++	/* execute a script */
++	if (hdr->ih_type == IH_TYPE_SCRIPT) {
++		addr = (char *)((char *)hdr + sizeof(*hdr));
++		/* stick a NULL at the end of the script, otherwise */
++		/* parse_string_outer() runs off the end. */
++		addr[ntohl(hdr->ih_size)] = 0;
++		addr += 8;
++		parse_string_outer(addr, FLAG_PARSE_SEMICOLON);
++		return 0;
++	}
++
++	start = aufl_layout[idx].start;
++	end = aufl_layout[idx].end;
++
++	/* unprotect the address range */
++	/* this assumes that ONLY the firmware is protected! */
++	if (idx == IDX_FIRMWARE) {
++#undef AU_UPDATE_TEST
++#ifdef AU_UPDATE_TEST
++		/* erase it where Linux goes */
++		start = aufl_layout[1].start;
++		end = aufl_layout[1].end;
++#endif
++		flash_sect_protect(0, start, end);
++	}
++
++	/*
++	 * erase the address range.
++	 */
++	debug ("flash_sect_erase(%lx, %lx);\n", start, end);
++	flash_sect_erase(start, end);
++	wait_ms(100);
++	/* strip the header - except for the kernel and ramdisk */
++	if (hdr->ih_type == IH_TYPE_KERNEL) {
++		addr = (char *)hdr;
++		off = sizeof(*hdr);
++		nbytes = sizeof(*hdr) + ntohl(hdr->ih_size);
++	} else {
++		addr = (char *)((char *)hdr + sizeof(*hdr));
++#ifdef AU_UPDATE_TEST
++		/* copy it to where Linux goes */
++		if (idx == IDX_FIRMWARE)
++			start = aufl_layout[1].start;
++#endif
++		off = 0;
++		nbytes = ntohl(hdr->ih_size);
++	}
++
++	/* copy the data from RAM to FLASH */
++	debug ("flash_write(%p, %lx %x)\n", addr, start, nbytes);
++	rc = flash_write(addr, start, nbytes);
++	if (rc != 0) {
++		printf("Flashing failed due to error %d\n", rc);
++		return -1;
++	}
++
++	/* check the dcrc of the copy */
++	if (crc32 (0, (uchar *)(start + off), ntohl(hdr->ih_size)) != ntohl(hdr->ih_dcrc)) {
++		printf ("Image %s Bad Data Checksum After COPY\n", aufile[idx]);
++		return -1;
++	}
++
++	/* protect the address range */
++	/* this assumes that ONLY the firmware is protected! */
++	if (idx == IDX_FIRMWARE)
++		flash_sect_protect(1, start, end);
++	return 0;
++}
++
++
++/*
++ * this is called from board_init() after the hardware has been set up
++ * and is usable. That seems like a good time to do this.
++ * Right now the return value is ignored.
++ */
++int 
++do_auto_update(void)
++{
++	block_dev_desc_t *stor_dev;
++	long sz;
++	int i, res, bitmap_first, cnt, old_ctrlc, got_ctrlc;
++	char *env;
++	long start, end;
++	char keypad_status1[2] = {0,0}, keypad_status2[2] = {0,0};
++
++	/*
++	 * Read keypad status
++	 */
++	i2c_read(I2C_PSOC_KEYPAD_ADDR, 0, 0, keypad_status1, 2);
++	wait_ms(500);
++	i2c_read(I2C_PSOC_KEYPAD_ADDR, 0, 0, keypad_status2, 2);
++
++	/*
++	 * Check keypad
++	 */
++	if ( !(keypad_status1[0] & KEYPAD_MASK_HI) ||
++	      (keypad_status1[0] != keypad_status2[0])) {
++		return 0;
++	}
++	if ( !(keypad_status1[1] & KEYPAD_MASK_LO) ||
++	      (keypad_status1[1] != keypad_status2[1])) {
++		return 0;
++	}
++	au_usb_stor_curr_dev = -1;
++	/* start USB */
++	if (usb_stop() < 0) {
++		debug ("usb_stop failed\n");
++		return -1;
++	}
++	if (usb_init() < 0) {
++		debug ("usb_init failed\n");
++		return -1;
++	}
++	/*
++	 * check whether a storage device is attached (assume that it's
++	 * a USB memory stick, since nothing else should be attached).
++	 */
++	au_usb_stor_curr_dev = usb_stor_scan(0);
++	if (au_usb_stor_curr_dev == -1) {
++		debug ("No device found. Not initialized?\n");
++		return -1;
++	}
++	/* check whether it has a partition table */
++	stor_dev = get_dev("usb", 0);
++	if (stor_dev == NULL) {
++		debug ("uknown device type\n");
++		return -1;
++	}
++	if (fat_register_device(stor_dev, 1) != 0) {
++		debug ("Unable to use USB %d:%d for fatls\n",
++			au_usb_stor_curr_dev, 1);
++		return -1;
++	}
++	if (file_fat_detectfs() != 0) {
++		debug ("file_fat_detectfs failed\n");
++	}
++
++	/* initialize the array of file names */
++	memset(aufile, 0, sizeof(aufile));
++	aufile[IDX_FIRMWARE] = AU_FIRMWARE;
++	aufile[IDX_KERNEL] = AU_KERNEL;
++	/* initialize the array of flash sizes */
++	memset(ausize, 0, sizeof(ausize));
++	ausize[IDX_FIRMWARE] = (AU_FL_FIRMWARE_ND + 1) - AU_FL_FIRMWARE_ST;
++	ausize[IDX_KERNEL] = (AU_FL_KERNEL_ND + 1) - AU_FL_KERNEL_ST;
++	/*
++	 * now check whether start and end are defined using environment
++	 * variables.
++	 */
++	start = -1;
++	end = 0;
++	env = getenv("firmware_st");
++	if (env != NULL)
++		start = simple_strtoul(env, NULL, 16);
++	env = getenv("firmware_nd");
++	if (env != NULL)
++		end = simple_strtoul(env, NULL, 16);
++	if (start >= 0 && end && end > start) {
++		ausize[IDX_FIRMWARE] = (end + 1) - start;
++		aufl_layout[0].start = start;
++		aufl_layout[0].end = end;
++	}
++	start = -1;
++	end = 0;
++	env = getenv("kernel_st");
++	if (env != NULL)
++		start = simple_strtoul(env, NULL, 16);
++	env = getenv("kernel_nd");
++	if (env != NULL)
++		end = simple_strtoul(env, NULL, 16);
++	if (start >= 0 && end && end > start) {
++		ausize[IDX_KERNEL] = (end + 1) - start;
++		aufl_layout[1].start = start;
++		aufl_layout[1].end = end;
++	}
++	/* make certain that HUSH is runnable */
++	u_boot_hush_start();
++	/* make sure that we see CTRL-C and save the old state */
++	old_ctrlc = disable_ctrlc(0);
++
++	bitmap_first = 0;
++	/* just loop thru all the possible files */
++	for (i = 0; i < AU_MAXFILES; i++) {
++		/* just read the header */
++		sz = file_fat_read(aufile[i], LOAD_ADDR, sizeof(image_header_t));
++		debug ("read %s sz %ld hdr %d\n",
++			aufile[i], sz, sizeof(image_header_t));
++		if (sz <= 0 || sz < sizeof(image_header_t)) {
++			debug ("%s not found\n", aufile[i]);
++			continue;
++		}
++		if (au_check_header_valid(i, sz) < 0) {
++			debug ("%s header not valid\n", aufile[i]);
++			continue;
++		}
++		sz = file_fat_read(aufile[i], LOAD_ADDR, MAX_LOADSZ);
++		debug ("read %s sz %ld hdr %d\n",
++			aufile[i], sz, sizeof(image_header_t));
++		if (sz <= 0 || sz <= sizeof(image_header_t)) {
++			debug ("%s not found\n", aufile[i]);
++			continue;
++		}
++		if (au_check_cksum_valid(i, sz) < 0) {
++			debug ("%s checksum not valid\n", aufile[i]);
++			continue;
++		}
++		/* this is really not a good idea, but it's what the */
++		/* customer wants. */
++		cnt = 0;
++		got_ctrlc = 0;
++		do {
++			res = au_do_update(i, sz);
++			/* let the user break out of the loop */
++			if (ctrlc() || had_ctrlc()) {
++				clear_ctrlc();
++				if (res < 0)
++					got_ctrlc = 1;
++				break;
++			}
++			cnt++;
++#ifdef AU_TEST_ONLY
++		} while (res < 0 && cnt < 3);
++		if (cnt < 3)
++#else
++		} while (res < 0);
++#endif
++	}
++	usb_stop();
++	/* restore the old state */
++	disable_ctrlc(old_ctrlc);
++	return 0;
++}
++#endif /* CONFIG_AUTO_UPDATE */
+diff --git a/board/mcc200/mcc200.c b/board/mcc200/mcc200.c
+index 5d74bde..67969a6 100644
+--- a/board/mcc200/mcc200.c
++++ b/board/mcc200/mcc200.c
+@@ -44,6 +44,7 @@ DECLARE_GLOBAL_DATA_PTR;
+ 
+ extern flash_info_t flash_info[];	/* FLASH chips info */
+ 
++extern int do_auto_update(void);
+ ulong flash_get_size (ulong base, int banknum);
+ 
+ #ifndef CFG_RAMBOOT
+@@ -227,6 +228,10 @@ int misc_init_r (void)
+ {
+ 	ulong flash_sup_end, snum;
+ 
++#ifdef CONFIG_AUTO_UPDATE
++	/* this has priority over all else */
++	do_auto_update();
++#endif
+ 	/*
+ 	 * Adjust flash start and offset to detected values
+ 	 */
+diff --git a/board/pb1x00/u-boot.lds b/board/pb1x00/u-boot.lds
+index a2d19a8..5ef8ba7 100644
+--- a/board/pb1x00/u-boot.lds
++++ b/board/pb1x00/u-boot.lds
+@@ -46,7 +46,8 @@ SECTIONS
+ 	. = ALIGN(4);
+ 	.sdata  : { *(.sdata) }
+ 
+-	_gp = ALIGN(16);
++	. = ALIGN(16);
++	_gp = .;
+ 
+ 	__got_start = .;
+ 	.got  : { *(.got) }
+diff --git a/board/purple/u-boot.lds b/board/purple/u-boot.lds
+index 1bdac1f..4c1f0d3 100644
+--- a/board/purple/u-boot.lds
++++ b/board/purple/u-boot.lds
+@@ -56,7 +56,8 @@ SECTIONS
+ 	. = ALIGN(4);
+ 	.sdata  : { *(.sdata) }
+ 
+-	_gp = ALIGN(16);
++	. = ALIGN(16);
++	_gp = .;
+ 
+ 	__got_start = .;
+ 	.got  : { *(.got) }
+diff --git a/board/tb0229/u-boot.lds b/board/tb0229/u-boot.lds
+index 30a2bc5..55c0b19 100644
+--- a/board/tb0229/u-boot.lds
++++ b/board/tb0229/u-boot.lds
+@@ -46,7 +46,8 @@ SECTIONS
+ 	. = ALIGN(4);
+ 	.sdata  : { *(.sdata) }
+ 
+-	_gp = ALIGN(16);
++	. = ALIGN(16);
++	_gp = .;
+ 
+ 	__got_start = .;
+ 	.got  : { *(.got) }
+diff --git a/cpu/mips/cache.S b/cpu/mips/cache.S
+index aad76e0..e1251c7 100644
+--- a/cpu/mips/cache.S
++++ b/cpu/mips/cache.S
+@@ -267,3 +267,76 @@ mips_cache_lock:
+ 
+ 	j	ra
+ 	.end	mips_cache_lock
++
++/*******************************************************************************
++*
++* _dma_cache_wback_inv - Write back and invalidate cache
++*
++* a0: start address
++* a1: size
++* RETURNS: N/A
++*
++*/
++	.globl	_dma_cache_wback_inv
++	.ent	_dma_cache_wback_inv
++_dma_cache_wback_inv:
++	and	t0, a0, ~(CFG_CACHELINE_SIZE-1)	/* Round down start address to t0 */
++	add	t1, t0, a1			/* Load end address in t1 */
++1:
++	cache	0x15, 0(t0)			/* Hit writeback invalidate D */
++	add	t0, t0, CFG_CACHELINE_SIZE	/* Next line */
++	blt	t0, t1, 1b			/* Check if we're done */
++	nop					/* Delay slot */
++
++	j	ra
++	nop					/* Delay slot */
++	.end	_dma_cache_wback_inv
++
++
++/*******************************************************************************
++*
++* _dma_cache_wback - Write back cache
++*
++* a0: start address
++* a1: size
++* RETURNS: N/A
++*
++*/
++	.globl	_dma_cache_wback
++	.ent	_dma_cache_wback
++_dma_cache_wback:
++	and	t0, a0, ~(CFG_CACHELINE_SIZE-1)	/* Round down start address to t0 */
++	add	t1, t0, a1			/* Load end address in t1 */
++1:
++	cache	0x19, 0(t0)			/* Hit writeback D */
++	add	t0, t0, CFG_CACHELINE_SIZE	/* Next line */
++	blt	t0, t1, 1b			/* Check if we're done */
++	nop					/* Delay slot */
++
++	j	ra
++	nop					/* Delay slot */
++	.end	_dma_cache_wback
++
++/*******************************************************************************
++*
++* _dma_cache_inv - Invalidate cache
++*
++* a0: start address
++* a1: size
++* RETURNS: N/A
++*
++*/
++	.globl	_dma_cache_inv
++	.ent	_dma_cache_inv
++_dma_cache_inv:
++	and	t0, a0, ~(CFG_CACHELINE_SIZE-1)	/* Round down start address to t0 */
++	add	t1, t0, a1			/* Load end address in t1 */
++1:
++	cache	0x11, 0(t0)			/* Hit invalidate D */
++	add	t0, t0, CFG_CACHELINE_SIZE	/* Next line */
++	blt	t0, t1, 1b			/* Check if we're done */
++	nop					/* Delay slot */
++
++	j	ra
++	nop					/* Delay slot */
++	.end	_dma_cache_inv
+diff --git a/cpu/mips/config.mk b/cpu/mips/config.mk
+index b29986e..caac276 100644
+--- a/cpu/mips/config.mk
++++ b/cpu/mips/config.mk
+@@ -30,8 +30,10 @@ else \
+ fi)
+ 
+ ifneq (,$(findstring 4KCle,$(CROSS_COMPILE)))
++BIG_ENDIAN = n
+ ENDIANNESS = -EL
+ else
++BIG_ENDIAN = y
+ ENDIANNESS = -EB
+ endif
+ 
+diff --git a/cpu/mips/cpu.c b/cpu/mips/cpu.c
+old mode 100644
+new mode 100755
+index f48675e..f4edf76
+--- a/cpu/mips/cpu.c
++++ b/cpu/mips/cpu.c
+@@ -25,6 +25,10 @@ #include <common.h>
+ #include <command.h>
+ #include <asm/inca-ip.h>
+ #include <asm/mipsregs.h>
++#ifdef CONFIG_ADM5120
++#  include <asm/io.h>
++#  include <adm51xx_switch.h>
++#endif /* CONFIG_ADM5120 */
+ 
+ int do_reset(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+ {
+@@ -34,6 +38,8 @@ #elif defined(CONFIG_PURPLE) || defined(
+ 	void (*f)(void) = (void *) 0xbfc00000;
+ 
+ 	f();
++#elif defined(CONFIG_ADM5120)
++	writel(0, CONFIG_ADM51xx_SWITCH_BASE + SWITCH_SFT_RES);
+ #endif
+ 	fprintf(stderr, "*** reset failed ***\n");
+ 	return 0;
+diff --git a/cpu/mips/start.S b/cpu/mips/start.S
+old mode 100644
+new mode 100755
+index e91e213..332e581
+--- a/cpu/mips/start.S
++++ b/cpu/mips/start.S
+@@ -29,15 +29,16 @@ #include <asm/regdef.h>
+ #include <asm/mipsregs.h>
+ 
+ 
+-#define RVECENT(f,n) \
+-   b f; nop
+-#define XVECENT(f,bev) \
+-   b f     ;           \
+-   li k0,bev
++#define RVECENT(f,n)	\
++	b	f;	\
++	nop
+ 
+-	.set noreorder
++#define XVECENT(f,bev)	\
++	b	f;	\
++	li	k0, bev
+ 
+-	.globl _start
++	.set	noreorder
++	.globl	_start
+ 	.text
+ _start:
+ 	RVECENT(reset,0)	/* U-boot entry point */
+@@ -226,10 +227,6 @@ #endif
+ 	/* CAUSE register */
+ 	mtc0	zero, CP0_CAUSE
+ 
+-	/* Init Timer */
+-	mtc0	zero, CP0_COUNT
+-	mtc0	zero, CP0_COMPARE
+-
+ 	/* CONFIG0 register */
+ 	li	t0, CONF_CM_UNCACHED
+ 	mtc0	t0, CP0_CONFIG
+@@ -334,7 +331,27 @@ #endif
+ 
+ 	/* If caches were enabled, we would have to flush them here.
+ 	 */
++	li	t3, CFG_SDRAM_BASE		/* Load start address in t3 */
++	and	t3, t3, 0x1FFFFFFF		/* Convert t3 to physical address */
++	or	t3, t3, 0x80000000		/* Convert t3 to cached alias */
++	add	t4, t3, CFG_DCACHE_SIZE		/* Load start address in t4 */
++	mtc0	CP0_TAGLO, zero
++1:
++	cache	0x9, 0(t3)			/* Index store tag D */
++	add	t3, t3, CFG_CACHELINE_SIZE
++	bne	t3, t4, 1b
++	nop
+ 
++	li	t3, CFG_SDRAM_BASE		/* Load start address in t3 */
++	and	t3, t3, 0x1FFFFFFF		/* Convert t3 to physical address */
++	or	t3, t3, 0x80000000		/* Convert t3 to cached alias */
++	addu	t4, t3, CFG_ICACHE_SIZE		/* Load start address in t4 */
++1:
++	cache	0x0, 0(t3)			/* Index invalidate tag I */
++	add	t3, t3, CFG_CACHELINE_SIZE
++	bne	t3, t4, 1b
++	nop
++	
+ 	/* Jump to where we've relocated ourselves.
+ 	 */
+ 	addi	t0, a2, in_ram - _start
+@@ -384,7 +401,9 @@ in_ram:
+ 	/* Exception handlers.
+ 	 */
+ romReserved:
+-	b romReserved
++	b	romReserved
++	nop
+ 
+ romExcHandle:
+-	b romExcHandle
++	b	romExcHandle
++	nop
+diff --git a/doc/README.adm5120 b/doc/README.adm5120
+new file mode 100755
+index 0000000..a09858a
+--- /dev/null
++++ b/doc/README.adm5120
+@@ -0,0 +1,133 @@
++
++U-Boot for Infineon ADM5120
++
++Robert Delien
++robert@delien.nl
++www.delien.nl
++Tue Oct 17 14:05:30 CEST 2006
++
++
++1. Overview
++===========
++The Infineon ADM5120 is a MIPS32 4Kc based SoC commonly found in many
++low end router products.  See
++	http://www.linux-mips.org/wiki/Adm5120#Products_based_on_the_ADM5120
++for a list of devices using the ADM5120.
++
++
++2. Updating U-Boot using U-Boot
++===============================
++To update U-Boot using U-boot, the following procedure can be used:
++
++
++2.1 Using the serial port, indirectly
++-------------------------------------
++With this procedure, U-Boot is loaded to RAM first. From there it can
++be written to FLASH memory.
++
++Setup U-Boot to receive a new version of U-Boot, using an offset of
++0xE0410000 to make sure U-Boot (build for address 0xBFC00000) is loaded
++at address 0xA0010000. (Note: the prompt is "ADM5120 # ")
++	ADM5120 # loads E0410000
++	## Ready for S-Record download ...
++
++Send the S-Record file file with you terminal program
++	..................................................
++	## First Load Addr = 0xA0010000
++	## Last  Load Addr = 0xA0023BC7
++	## Total Size      = 0x00013BC8 = 80840 Bytes
++	## Start Addr      = 0xBFC00000
++
++Disable protection of NOR FLASH
++	ADM5120 # protect off all
++	Un-Protect Flash Bank # 1
++
++Erase the NOR FLASH area to write U-Boot to
++	ADM5120 # erase BFC00000 +30000
++	..... done
++	Erased 5 sectors
++
++Copy U-Boot to NOR FLASH
++	ADM5120 # cp.b 0xA0010000 0xBFC00000 0x00030000
++	Copy to Flash... done
++
++Reset the board
++	ADM5120 # reset
++	U-Boot 1.1.6-g4684cddb-dirty (Dec 11 2006 - 19:21:02)
++
++	SoC:   Infineon ADM5120/PQFP @175MHz (Rev: 0008)
++	DRAM:  16 MB
++	Flash:  2 MB
++	In:    serial
++	Out:   serial
++	Err:   serial
++	Hit any key to stop autoboot:  0
++	ADM5120 #
++
++
++2.2 Using the serial port, directly
++-----------------------------------
++With this procedure, U-Boot is loaded to FLASH memory directly.
++
++Disable protection of NOR FLASH
++	ADM5120 # protect off all
++	Un-Protect Flash Bank # 1
++
++Erase the NOR FLASH area to write U-Boot to
++	ADM5120 # erase BFC00000 +30000
++	..... done
++	Erased 5 sectors
++
++Setup U-Boot to receive a new version of U-Boot (Note: the prompt is
++"ADM5120 # ").
++	ADM5120 # loads
++	## Ready for S-Record download ...
++
++Send the S-Record file file with you terminal program
++	..................................................
++	## First Load Addr = 0xBFC00000
++	## Last  Load Addr = 0xBFC23BC7
++	## Total Size      = 0x00013BC8 = 80840 Bytes
++	## Start Addr      = 0xBFC00000
++
++
++2.3 Using Ethernet, indirectly
++------------------------------
++Put the binary file on a TFTP server and have U-Boot load in into
++memory. You can specify the name of the file and the destination
++address. If you don't the environment variables 'loadaddr' and
++'bootfile' to specify them.
++	ADM5120 # tftp 0xA0010000 u-boot.bin
++	Using adm0 device
++	TFTP from server 192.168.1.10; our IP address is 192.168.1.25
++	Filename 'u-boot.bin'.
++	Load address: 0xa0010000
++	Loading: ############################
++	done
++	Bytes transferred = 140444 (2249c hex)
++
++Disable protection of NOR FLASH
++	ADM5120 # protect off all
++	Un-Protect Flash Bank # 1
++
++Erase the NOR FLASH area to write U-Boot to
++	ADM5120 # erase BFC00000 +30000
++	..... done
++	Erased 5 sectors
++
++Copy U-Boot to NOR FLASH
++	ADM5120 # cp.b 0xA0010000 0xBFC00000 0x00030000
++	Copy to Flash... done
++
++
++2.4 Using Ethernet, directly
++----------------------------
++Use your imagination...
++
++
++3. Configuring U-Boot
++=====================
++To configure and build U-Boot for the ADM5120 do
++
++	$ make adm5120_config
++	$ make
+diff --git a/drivers/Makefile b/drivers/Makefile
+index 5a369df..cf38029 100644
+--- a/drivers/Makefile
++++ b/drivers/Makefile
+@@ -27,7 +27,7 @@ # CFLAGS += -DET_DEBUG -DDEBUG
+ 
+ LIB	= $(obj)libdrivers.a
+ 
+-COBJS	= 3c589.o 5701rls.o ali512x.o atmel_usart.o \
++COBJS	= 3c589.o 5701rls.o adm51xx_switch.o ali512x.o atmel_usart.o \
+ 	  bcm570x.o bcm570x_autoneg.o cfb_console.o cfi_flash.o \
+ 	  cs8900.o ct69000.o dataflash.o dc2114x.o dm9000x.o \
+ 	  e1000.o eepro100.o \
+diff --git a/drivers/adm51xx_switch.c b/drivers/adm51xx_switch.c
+new file mode 100755
+index 0000000..dfdf17f
+--- /dev/null
++++ b/drivers/adm51xx_switch.c
+@@ -0,0 +1,592 @@
++/*
++ * adm51xx_eth.c -- Ethernet driver for ADM5120, ADM5106 (untested)
++ *                  and possibly more SoCs
++ *
++ * Copyright (c) 2006 SATO Masuhiro <thomas@fenix.ne.jp>
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++/*
++ * Usage for this driver is difficult to explain, since ADM5120 Ether
++ * net controler has programable HUB.
++ *
++ * - ADM5120 has 6 HUBs, which makes VLAN.
++ * - The software send/receive packets to/from CPU port on the VLANs
++ *   instead of physical Ether NET ports.
++ *
++ * Setting of the HUB can be overrided by environment value, "ethports", like
++ *
++ * ethports=0x4f,0x50
++ *
++ * This parameter makes.
++ * VLAN0: port0, port1, port2, port3, cpu
++ * VLAN1: port4, cpu
++ * 
++ */
++
++#include <config.h>
++
++#if (CONFIG_COMMANDS & CFG_CMD_NET) && defined(CONFIG_NET_MULTI) && \
++	defined(CONFIG_ADM51xx_SWITCH)
++
++#include <common.h>
++#include <malloc.h>
++#include <net.h>
++#include <asm/io.h>
++#include <adm51xx_switch.h>
++
++#define RX_HP_BUF_COUNT	4
++#define TX_HP_BUF_COUNT	4
++#define RX_BUF_COUNT	4
++#define TX_BUF_COUNT	4
++#define BUFSIZE		1536
++
++#define DESC_OWN_SC	0x80000000
++#define DESC_RING_END	0x10000000
++
++
++struct buf_desc {
++	u32 buffer1;
++	u32 buffer2;
++	u32 buffer1_length;
++	u32 flags;
++} __attribute__((packed));
++
++
++static int adm5120_eth_init(struct eth_device* dev, bd_t * bd);
++static void adm5120_eth_halt(struct eth_device *dev);
++static int adm5120_eth_recv(struct eth_device *dev);
++static int adm5120_eth_send(struct eth_device *dev, volatile void *packet, int length);
++static int adm5120_eth_update(void);
++
++static void init_buffer(void);
++static int init_buf_ring(struct buf_desc *buf_desc, int count, u8 *buf, u32 own);
++static void adm5120_switch_init(void);
++static int tx_hp_update(void);
++static int tx_update(void);
++static int rx_hp_update(void);
++static int rx_update(void);
++
++
++/* all ports are connected to VLAN0 */
++static u8 port_map[SWITCH__VLAN_PORTS] = {
++	SWITCH__PORT_CPU | SWITCH__PORT_4 | SWITCH__PORT_3 | SWITCH__PORT_2 | SWITCH__PORT_1 | SWITCH__PORT_0
++};
++static u32 port_enable;
++
++static int tx_put, tx_done, tx_hp_put, tx_hp_done;
++static int rx_put, rx_done, rx_suspend, rx_hp_put, rx_hp_done, rx_hp_suspend;
++/* buffers for high priority packets */
++static u8 tx_hp_buf[RX_HP_BUF_COUNT * BUFSIZE] __attribute__((aligned(32)));
++static u8 rx_hp_buf[TX_HP_BUF_COUNT * BUFSIZE] __attribute__((aligned(32)));
++/* buffers for normal priority packets */
++static u8 tx_buf[RX_BUF_COUNT * BUFSIZE] __attribute__((aligned(32)));
++static u8 rx_buf[TX_BUF_COUNT * BUFSIZE] __attribute__((aligned(32)));
++
++struct buf_desc	rx_hp_desc[RX_HP_BUF_COUNT] __attribute__((aligned(32)));
++struct buf_desc	tx_hp_desc[TX_HP_BUF_COUNT] __attribute__((aligned(32)));
++;
++struct buf_desc	rx_desc[RX_BUF_COUNT] __attribute__((aligned(32)));
++;
++struct buf_desc	tx_desc[TX_BUF_COUNT] __attribute__((aligned(32)));
++
++
++int adm5120_eth_initialize(bd_t *bis)
++{
++	char *p;
++	int i;
++
++	if ((p = getenv("ethports")) != NULL) {
++		long ports;
++
++		i = 0;
++		memset(port_map, 0, sizeof(port_map));
++		while (*p) {
++			ports = simple_strtol(p, &p, 0x10);
++			if (ports)
++				port_map[i++] = (u8)ports;
++			if (*p == 0)
++				break;
++			if (*p != ',' && *p != ':')
++				break;
++			p++;
++		}
++	}
++
++	adm5120_switch_init();
++
++#ifdef DEBUG
++	printf("adm5120_eth port groups ");
++#endif
++	for (i = 0; i < SWITCH__VLAN_PORTS && port_map[i] != 0; i++) {
++		struct eth_device *dev;
++#ifdef DEBUG
++		int	j;
++		u8	bit = 0x01;
++
++		printf("%d:", i);
++
++		for (j = 0; j < SWITCH__PHYS_PORTS + 2; j++) {
++			if (bit & port_map[i]) {
++				if (j > 0)
++					printf(".", j);
++				printf("%d", j);
++			}
++			bit <<= 1;
++		}
++		printf(" ");
++#endif
++
++		dev = (struct eth_device *)malloc(sizeof(struct eth_device));
++		if (dev == NULL) {
++			printf("\nadm5120_eth_initialize(): malloc() failed\n");
++			break;
++		}
++		memset(dev, 0, sizeof(struct eth_device));
++
++		sprintf(dev->name, "adm%d", i);
++		dev->iobase = 0;
++		dev->priv   = (void *)i;
++		dev->init   = adm5120_eth_init;
++		dev->halt   = adm5120_eth_halt;
++		dev->send   = adm5120_eth_send;
++		dev->recv   = adm5120_eth_recv;
++
++		eth_register(dev);
++	}
++
++	return 1;
++}
++
++
++
++static void adm5120_switch_init()
++{
++	int	i;
++
++	writel( SWITCH_CPUP_CONF__CRCP,
++		SWITCH_CPUP_CONF + CONFIG_ADM51xx_SWITCH_BASE );
++	writel( SWITCH_PORT_CONF0__DP,
++		SWITCH_PORT_CONF0 + CONFIG_ADM51xx_SWITCH_BASE );
++
++	barrier();
++	udelay(10000);
++
++	writel( SWITCH_VLAN_GI__VLAN0_SET(port_map[0]) |
++		SWITCH_VLAN_GI__VLAN1_SET(port_map[1]) |
++		SWITCH_VLAN_GI__VLAN2_SET(port_map[2]) |
++		SWITCH_VLAN_GI__VLAN3_SET(port_map[3]),
++		SWITCH_VLAN_GI + CONFIG_ADM51xx_SWITCH_BASE );
++
++	writel( SWITCH_VLAN_GII__VLAN4_SET(port_map[4]) |
++		SWITCH_VLAN_GII__VLAN5_SET(port_map[5]),
++		SWITCH_VLAN_GII + CONFIG_ADM51xx_SWITCH_BASE );
++
++	barrier();
++
++	port_enable = 0;
++	for (i = 0; i < SWITCH__VLAN_PORTS; i++)
++		port_enable |= port_map[i];
++
++#ifdef DEBUG
++	printf("port_enable = %08x\n", port_enable);
++#endif
++
++	/* CPU port to be disabled, CRC padding, disable unknown packets */
++	writel( SWITCH_CPUP_CONF__DCPUP |
++		SWITCH_CPUP_CONF__CRCP |
++		SWITCH_CPUP_CONF__DUNP_SET(SWITCH__PORTS_NET),
++		SWITCH_CPUP_CONF + CONFIG_ADM51xx_SWITCH_BASE );
++
++	/* enable ports, multicast, back pressure */
++	writel( SWITCH_PORT_CONF0__DP_SET(~port_enable) |
++		SWITCH_PORT_CONF0__EMCP_SET(port_enable) |
++		SWITCH_PORT_CONF0__EBP_SET(port_enable),
++		SWITCH_PORT_CONF0 + CONFIG_ADM51xx_SWITCH_BASE );
++
++	writel( SWITCH_PORT_CONF1__SASM_SET(0) |
++		SWITCH_PORT_CONF1__PA_SET(port_enable) |
++		SWITCH_PORT_CONF1__BM_SET(0) |
++		SWITCH_PORT_CONF1__BS_SET(0) |
++		SWITCH_PORT_CONF1__DISL_SET(0),
++		SWITCH_PORT_CONF1 + CONFIG_ADM51xx_SWITCH_BASE );
++
++	if (port_enable & SWITCH__PORT_GIGA) {
++		writel( SWITCH_PORT_CONF2__GMIIAN |	/* AN enable */
++			SWITCH_PORT_CONF2__FMPS_100M |	/* 100M */	
++			SWITCH_PORT_CONF2__FMDP |	/* full duplex */
++			SWITCH_PORT_CONF2__FMPFC_RXTX,	/* flow control */
++			SWITCH_PORT_CONF2 + CONFIG_ADM51xx_SWITCH_BASE );
++	} else {
++		writel( SWITCH_PORT_CONF2__FMPS_100M |	/* 100M */	
++			SWITCH_PORT_CONF2__FMDP |	/* full duplex */
++			SWITCH_PORT_CONF2__FMPFC_RXTX |	/* flow control */
++			SWITCH_PORT_CONF2__TXCC,	/* disable check TXC */
++			SWITCH_PORT_CONF2 + CONFIG_ADM51xx_SWITCH_BASE );
++	}
++
++	barrier();
++	udelay(10000);
++
++	writel( SWITCH_PHY_CNTL2__ANE_SET(port_enable) |	/* auto negotiation */
++		SWITCH_PHY_CNTL2__SC_SET(port_enable) |		/* speed control */
++		SWITCH_PHY_CNTL2__DC_SET(port_enable) |		/* duplex control */
++		SWITCH_PHY_CNTL2__RFCV_SET(port_enable) |	/* FC rec */
++		SWITCH_PHY_CNTL2__PHYR_SET(port_enable), 	/* disable reset */
++		SWITCH_PHY_CNTL2 + CONFIG_ADM51xx_SWITCH_BASE );
++
++#if 1
++	writel( SWITCH_PHY_CNTL3__DFEFI |
++		SWITCH_PHY_CNTL3__RPIC |
++		SWITCH_PHY_CNTL3__RRJE |
++		SWITCH_PHY_CNTL3__RBLL_VAL(0) |
++		SWITCH_PHY_CNTL3__PFRV_VAL(2) |
++		SWITCH_PHY_CNTL3__RBLL_VAL(3),
++		SWITCH_PHY_CNTL3 + CONFIG_ADM51xx_SWITCH_BASE );
++#else
++	writel( SWITCH_PHY_CNTL3__RPIC |
++		SWITCH_PHY_CNTL3__RRJE |
++		SWITCH_PHY_CNTL3__RBLL_VAL(0) |
++		SWITCH_PHY_CNTL3__PFRV_VAL(2) |
++		SWITCH_PHY_CNTL3__RBLL_VAL(3),
++		SWITCH_PHY_CNTL3 + CONFIG_ADM51xx_SWITCH_BASE );
++#endif
++	/* Mask all interrupts */
++	writel( SWITCH_INT_MASK__ALL_INTS,
++		SWITCH_INT_MASK + CONFIG_ADM51xx_SWITCH_BASE );
++
++	/* Clear all pending interrupts */
++	writel( readl(SWITCH_INT_ST + CONFIG_ADM51xx_SWITCH_BASE),
++		SWITCH_INT_ST + CONFIG_ADM51xx_SWITCH_BASE );
++
++	barrier();
++}
++
++
++static int init_buf_ring(struct buf_desc *buf_desc, int count, u8 *buf, u32 own)
++{
++	int i;
++
++	memset(buf, 0, BUFSIZE * count);
++	for (i = 0; i < count; i++) {
++		buf_desc[i].buffer1 = own |
++			((i == count - 1) ? DESC_RING_END : 0) |
++			virt_to_phys(buf + (i * BUFSIZE));
++		buf_desc[i].buffer2 = 0;
++		buf_desc[i].buffer1_length = BUFSIZE;
++		buf_desc[i].flags = 0;
++	}
++	dma_cache_wback_inv((unsigned long)buf,      BUFSIZE * count);
++	dma_cache_wback_inv((unsigned long)buf_desc, sizeof(struct buf_desc) * count);
++	
++	return i;
++}
++
++
++static void init_buffer()
++{
++	tx_put = 0;
++	tx_done = 0;
++	tx_hp_put = 0;
++	tx_hp_done = 0;
++	rx_put = 0;
++	rx_done = 0;
++	rx_suspend = RX_BUF_COUNT;
++	rx_hp_put = 0;
++	rx_hp_done = 0;
++	rx_hp_suspend = RX_HP_BUF_COUNT;
++
++	init_buf_ring(tx_hp_desc, TX_HP_BUF_COUNT, tx_hp_buf, 0);
++	init_buf_ring(rx_hp_desc, RX_HP_BUF_COUNT, rx_hp_buf, DESC_OWN_SC);
++	init_buf_ring(tx_desc,    TX_BUF_COUNT,    tx_buf,    0);
++	init_buf_ring(rx_desc,    RX_BUF_COUNT,    rx_buf,    DESC_OWN_SC);
++
++	writel(virt_to_phys(tx_hp_desc), CONFIG_ADM51xx_SWITCH_BASE + SWITCH_SEND_HBADDR);
++	writel(virt_to_phys(tx_desc),    CONFIG_ADM51xx_SWITCH_BASE + SWITCH_SEND_LBADDR);
++	writel(virt_to_phys(rx_hp_desc), CONFIG_ADM51xx_SWITCH_BASE + SWITCH_REC_HBADDR);
++	writel(virt_to_phys(rx_desc),    CONFIG_ADM51xx_SWITCH_BASE + SWITCH_REC_LBADDR);
++	barrier();
++}
++
++
++static int adm5120_eth_init(struct eth_device *dev, bd_t *bd)
++{
++#ifdef DEBUG
++	printf( "adm5120_eth_init(): priv=%p dev->enetaddr=%02x:%02x:%02x:%02x:%02x:%02x\n",
++		dev->priv,
++		dev->enetaddr[0],
++		dev->enetaddr[1],
++		dev->enetaddr[2],
++		dev->enetaddr[3],
++		dev->enetaddr[4],
++		dev->enetaddr[5] );
++#endif
++	init_buffer();
++
++	/* Enable CPU port */
++	writel( readl(SWITCH_CPUP_CONF + CONFIG_ADM51xx_SWITCH_BASE) & ~SWITCH_CPUP_CONF__DCPUP,
++		SWITCH_CPUP_CONF + CONFIG_ADM51xx_SWITCH_BASE );
++
++	writel( SWITCH_MAC_WT1__MWA_B5(dev->enetaddr[5]) |
++		SWITCH_MAC_WT1__MWA_B4(dev->enetaddr[4]) |
++		SWITCH_MAC_WT1__MWA_B3(dev->enetaddr[3]) |
++		SWITCH_MAC_WT1__MWA_B2(dev->enetaddr[2]),
++		SWITCH_MAC_WT1 + CONFIG_ADM51xx_SWITCH_BASE );
++
++	writel( SWITCH_MAC_WT0__MWA_B1(dev->enetaddr[1]) |
++		SWITCH_MAC_WT0__MWA_B0(dev->enetaddr[0]) |
++		SWITCH_MAC_WT0__WAF_SET(1) |
++		SWITCH_MAC_WT0__WVE |
++		SWITCH_MAC_WT0__WVN_SET((unsigned)dev->priv) |
++		SWITCH_MAC_WT0__MAWC,
++		SWITCH_MAC_WT0 + CONFIG_ADM51xx_SWITCH_BASE );
++
++	barrier();
++
++	/* Wait for the MAC address write to complete */
++	while ((readl(SWITCH_MAC_WT0 + CONFIG_ADM51xx_SWITCH_BASE) & SWITCH_MAC_WT0__MWD) == 0)
++		;
++
++	/* Mask all interrupts */
++	writel( SWITCH_INT_MASK__ALL_INTS,
++		SWITCH_INT_MASK + CONFIG_ADM51xx_SWITCH_BASE );
++
++	/* Clear all pending interrupts */
++	writel( readl(SWITCH_INT_ST + CONFIG_ADM51xx_SWITCH_BASE),
++		SWITCH_INT_ST + CONFIG_ADM51xx_SWITCH_BASE );
++
++	barrier();
++
++	return(1);
++}
++
++
++
++static void adm5120_eth_halt(struct eth_device *dev)
++{
++	/* Disable CPU port */
++	writel( readl(SWITCH_CPUP_CONF + CONFIG_ADM51xx_SWITCH_BASE) | SWITCH_CPUP_CONF__DCPUP,
++		SWITCH_CPUP_CONF + CONFIG_ADM51xx_SWITCH_BASE );
++
++	barrier();
++	udelay(10000);
++}
++
++
++
++static int adm5120_eth_send(struct eth_device *dev, volatile void *packet, int length)
++{
++	u8 *bp;
++	int retry;
++	struct buf_desc *dp;
++
++	retry =  100;
++	while (tx_put - tx_done == TX_BUF_COUNT && --retry) {
++		udelay(1000);
++		adm5120_eth_update();
++	}
++	if (retry == 0)
++		return 0;
++
++	bp = tx_buf + BUFSIZE * (tx_put % TX_BUF_COUNT);
++	memcpy(bp, packet, length);
++
++	dp = &tx_desc[tx_put % TX_BUF_COUNT];
++	dp->buffer1_length = length;
++	if (length < 60)
++		length = 60;
++	dp->flags = (length << 16) | (1 << (unsigned)dev->priv);
++	dp->buffer1 |= DESC_OWN_SC;
++
++	dma_cache_wback_inv((unsigned long)bp, length);
++	dma_cache_wback_inv((unsigned long)dp, sizeof(struct buf_desc));
++	writel( SWITCH_SEND_TRIG__STL,
++		SWITCH_SEND_TRIG + CONFIG_ADM51xx_SWITCH_BASE );
++	barrier();
++
++#ifdef DEBUG
++	printf( "adm5120_eth_tx(), tx_put=%d, desc=%p, buf=%p, len=%d\n",
++		tx_put, dp, bp, length );
++#endif
++
++	tx_put++;
++
++	return length;
++}
++
++
++
++static int adm5120_eth_recv(struct eth_device *dev)
++{
++	volatile struct buf_desc *dp;
++	u8 *bp;
++	int len;
++
++	len = 0;
++
++	if (rx_put == rx_done && rx_hp_put == rx_hp_done)
++		adm5120_eth_update();
++
++	 while (rx_hp_put > rx_hp_done) {
++		bp = rx_hp_buf + BUFSIZE * (rx_hp_done % RX_BUF_COUNT);
++		dp = &rx_hp_desc[rx_hp_done % RX_BUF_COUNT];
++		
++		len = dp->flags >> 16; 
++		if (len > 0) {
++			NetReceive(bp, len);
++			dma_cache_inv((unsigned long)bp, len);
++		}
++		dp->buffer1 |= DESC_OWN_SC;
++		dma_cache_wback_inv((unsigned long)dp, sizeof(struct buf_desc));
++		rx_hp_done++;	
++		rx_hp_suspend++;	
++#ifdef DEBUG
++		printf( "adm5120_eth_rx() pull %d bytes. rx_hp_done=%d\n",
++			len, rx_hp_done );
++#endif
++	} 
++
++	while (rx_put > rx_done) {
++		bp = rx_buf + BUFSIZE * (rx_done % RX_BUF_COUNT);
++		dp = &rx_desc[rx_done % RX_BUF_COUNT];
++		
++		len = dp->flags >> 16; 
++		if (len > 0) {
++			NetReceive(bp, len);
++			dma_cache_inv((unsigned long)bp, len);
++		}
++		dp->buffer1 |= DESC_OWN_SC;
++		dma_cache_wback_inv((unsigned long)dp, sizeof(struct buf_desc));
++		rx_done++;	
++		rx_suspend++;	
++#ifdef DEBUG
++		printf( "adm5120_eth_rx() pull %d bytes. rx_done=%d\n",
++			len, rx_done );
++#endif
++	}
++
++	return 0;
++}
++
++
++
++static int rx_update()
++{
++	int	n = 0;
++
++	while (rx_put < rx_suspend) {
++		volatile struct buf_desc *dp;
++		dp = &rx_desc[rx_put % RX_BUF_COUNT];
++		dma_cache_inv((unsigned long)dp, sizeof(struct buf_desc));
++		if ((dp->buffer1 & DESC_OWN_SC) != 0)
++			break;
++		rx_put++;
++		n++;
++#ifdef DEBUG
++		printf( "rx_update() rx_put=%0d, rx_suspend=%d\n",
++			rx_put, rx_suspend );
++#endif
++	}
++
++	return n;
++}
++
++
++
++static int rx_hp_update()
++{
++	int	n = 0;
++
++	while (rx_hp_put < rx_hp_suspend) {
++		volatile struct buf_desc *dp;
++		dp = &rx_hp_desc[rx_put % RX_BUF_COUNT];
++		dma_cache_inv((unsigned long)dp, sizeof(struct buf_desc));
++		if ((dp->buffer1 & DESC_OWN_SC) != 0)
++			break;
++		rx_hp_put++;
++		n++;
++	}
++
++	return n;
++}
++
++static int tx_update()
++{
++	int	n = 0;
++
++	while (tx_put > tx_done) {
++		volatile struct buf_desc *dp;
++
++		dp = &tx_desc[rx_put % RX_BUF_COUNT];
++		dma_cache_inv((unsigned long)dp, sizeof(struct buf_desc));
++		if ((dp->buffer1 & DESC_OWN_SC) != 0)
++			break;
++		tx_done++;
++		n++;
++#ifdef DEBUG
++		printf( "tx_update() tx_put=%0d, tx_done=%d\n",
++			tx_put, tx_done );
++#endif
++	}
++	if (tx_put > tx_done) {
++		writel( SWITCH_SEND_TRIG__STL,
++			SWITCH_SEND_TRIG + CONFIG_ADM51xx_SWITCH_BASE );
++		barrier();
++	}
++
++	return n;
++}
++
++
++static int tx_hp_update()
++{
++	int	n = 0;
++
++	while (tx_hp_put > tx_hp_done) {
++		volatile struct buf_desc *dp;
++
++		dp = &tx_hp_desc[rx_put % RX_BUF_COUNT];
++		dma_cache_inv((unsigned long)dp, sizeof(struct buf_desc));
++		if ((dp->buffer1 & DESC_OWN_SC) != 0)
++			break;
++		tx_hp_done++;
++		n++;
++#ifdef DEBUG
++		printf( "tx_hp_update() tx_hp_put=%0d, tx_hp_done=%d\n",
++			tx_hp_put, tx_hp_done );
++#endif
++	}
++
++	return n;
++}
++
++
++static int adm5120_eth_update()
++{
++	int	n = 0;
++
++	n += rx_hp_update();
++	n += rx_update();
++	n += tx_hp_update();
++	n += tx_update();
++	
++	return n;
++}
++
++#endif
+diff --git a/drivers/serial_pl010.c b/drivers/serial_pl010.c
+index 417b6ae..dc798a2 100644
+--- a/drivers/serial_pl010.c
++++ b/drivers/serial_pl010.c
+@@ -29,14 +29,12 @@
+ /* Should be fairly simple to make it work with the PL010 as well */
+ 
+ #include <common.h>
++#include <asm/io.h>
+ 
+ #ifdef CFG_PL010_SERIAL
+ 
+ #include "serial_pl011.h"
+ 
+-#define IO_WRITE(addr, val) (*(volatile unsigned int *)(addr) = (val))
+-#define IO_READ(addr) (*(volatile unsigned int *)(addr))
+-
+ /* Integrator AP has two UARTs, we use the first one, at 38400-8-N-1 */
+ #define CONSOLE_PORT CONFIG_CONS_INDEX
+ #define baudRate CONFIG_BAUDRATE
+@@ -56,7 +54,7 @@ int serial_init (void)
+ 	/*
+ 	 ** First, disable everything.
+ 	 */
+-	IO_WRITE (port[CONSOLE_PORT] + UART_PL010_CR, 0x0);
++	writel (0x0, port[CONSOLE_PORT] + UART_PL010_CR);
+ 
+ 	/*
+ 	 ** Set baud rate
+@@ -64,43 +62,32 @@ int serial_init (void)
+ 	 */
+ 	switch (baudRate) {
+ 	case 9600:
+-		divisor = UART_PL010_BAUD_9600;
+-		break;
+-
+ 	case 19200:
+-		divisor = UART_PL010_BAUD_9600;
+-		break;
+-
+ 	case 38400:
+-		divisor = UART_PL010_BAUD_38400;
+-		break;
+-
+ 	case 57600:
+-		divisor = UART_PL010_BAUD_57600;
+-		break;
+-
+ 	case 115200:
+-		divisor = UART_PL010_BAUD_115200;
++		divisor = UART_PL010_BAUD2DIVISOR(baudRate);
+ 		break;
+ 
+ 	default:
+-		divisor = UART_PL010_BAUD_38400;
++		divisor = UART_PL010_BAUD2DIVISOR(38400);
+ 	}
+ 
+-	IO_WRITE (port[CONSOLE_PORT] + UART_PL010_LCRM,
+-		  ((divisor & 0xf00) >> 8));
+-	IO_WRITE (port[CONSOLE_PORT] + UART_PL010_LCRL, (divisor & 0xff));
++	writel (((divisor & 0xf00) >> 8), 
++		port[CONSOLE_PORT] + UART_PL010_LCRM);
++	writel ((divisor & 0xff),
++		port[CONSOLE_PORT] + UART_PL010_LCRL);
+ 
+ 	/*
+ 	 ** Set the UART to be 8 bits, 1 stop bit, no parity, fifo enabled.
+ 	 */
+-	IO_WRITE (port[CONSOLE_PORT] + UART_PL010_LCRH,
+-		  (UART_PL010_LCRH_WLEN_8 | UART_PL010_LCRH_FEN));
++	writel ((UART_PL010_LCRH_WLEN_8 | UART_PL010_LCRH_FEN),
++		port[CONSOLE_PORT] + UART_PL010_LCRH);
+ 
+ 	/*
+ 	 ** Finally, enable the UART
+ 	 */
+-	IO_WRITE (port[CONSOLE_PORT] + UART_PL010_CR, (UART_PL010_CR_UARTEN));
++	writel ((UART_PL010_CR_UARTEN), port[CONSOLE_PORT] + UART_PL010_CR);
+ 
+ 	return (0);
+ }
+@@ -137,10 +124,10 @@ void serial_setbrg (void)
+ static void pl010_putc (int portnum, char c)
+ {
+ 	/* Wait until there is space in the FIFO */
+-	while (IO_READ (port[portnum] + UART_PL01x_FR) & UART_PL01x_FR_TXFF);
++	while (readl (port[portnum] + UART_PL01x_FR) & UART_PL01x_FR_TXFF);
+ 
+ 	/* Send the character */
+-	IO_WRITE (port[portnum] + UART_PL01x_DR, c);
++	writel (c, port[portnum] + UART_PL01x_DR);
+ }
+ 
+ static int pl010_getc (int portnum)
+@@ -148,14 +135,14 @@ static int pl010_getc (int portnum)
+ 	unsigned int data;
+ 
+ 	/* Wait until there is data in the FIFO */
+-	while (IO_READ (port[portnum] + UART_PL01x_FR) & UART_PL01x_FR_RXFE);
++	while (readl (port[portnum] + UART_PL01x_FR) & UART_PL01x_FR_RXFE);
+ 
+-	data = IO_READ (port[portnum] + UART_PL01x_DR);
++	data = readl (port[portnum] + UART_PL01x_DR);
+ 
+ 	/* Check for an error flag */
+ 	if (data & 0xFFFFFF00) {
+ 		/* Clear the error */
+-		IO_WRITE (port[portnum] + UART_PL01x_ECR, 0xFFFFFFFF);
++		writel (0xFFFFFFFF, port[portnum] + UART_PL01x_ECR);
+ 		return -1;
+ 	}
+ 
+@@ -164,7 +151,7 @@ static int pl010_getc (int portnum)
+ 
+ static int pl010_tstc (int portnum)
+ {
+-	return !(IO_READ (port[portnum] + UART_PL01x_FR) &
++	return !(readl (port[portnum] + UART_PL01x_FR) &
+ 		 UART_PL01x_FR_RXFE);
+ }
+ 
+diff --git a/drivers/serial_pl011.h b/drivers/serial_pl011.h
+old mode 100644
+new mode 100755
+index 5f20fdd..b99aa1a
+--- a/drivers/serial_pl011.h
++++ b/drivers/serial_pl011.h
+@@ -77,18 +77,8 @@ #define UART_PL010_LCRH_EPS             
+ #define UART_PL010_LCRH_PEN             (1 << 1)
+ #define UART_PL010_LCRH_BRK             (1 << 0)
+ 
++#define UART_PL010_BAUD2DIVISOR(baud)	((CFG_UART_PL010_CLOCK+(0x8*(baud)))/(0x10*(baud))-1)
+ 
+-#define UART_PL010_BAUD_460800            1
+-#define UART_PL010_BAUD_230400            3
+-#define UART_PL010_BAUD_115200            7
+-#define UART_PL010_BAUD_57600             15
+-#define UART_PL010_BAUD_38400             23
+-#define UART_PL010_BAUD_19200             47
+-#define UART_PL010_BAUD_14400             63
+-#define UART_PL010_BAUD_9600              95
+-#define UART_PL010_BAUD_4800              191
+-#define UART_PL010_BAUD_2400              383
+-#define UART_PL010_BAUD_1200              767
+ /*
+  *  PL011 definitions
+  *
+diff --git a/examples/Makefile b/examples/Makefile
+index 423a79b..7729915 100644
+--- a/examples/Makefile
++++ b/examples/Makefile
+@@ -121,6 +121,8 @@ endif
+ 
+ ifeq ($(BIG_ENDIAN),y)
+ EX_LDFLAGS += -EB
++else
++EX_LDFLAGS += -EL
+ endif
+ 
+ COBJS	:= $(SREC:.srec=.o)
+diff --git a/include/adm5120_glb.h b/include/adm5120_glb.h
+new file mode 100644
+index 0000000..9ffe52e
+--- /dev/null
++++ b/include/adm5120_glb.h
+@@ -0,0 +1,37 @@
++/*
++ * Definitions for memory memory map of
++ * ADMtek/Infineon adm5120 SoC.
++ *
++ * (C) Copyright 2006
++ * Robert Delien, <robert@delien.nl>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#ifndef ADM5120_GLB_H
++#define ADM5120_GLB_H
++
++#define TO_PHYSICAL(addr)		((unsigned long)(addr) & 0x1FFFFFFFUL)
++#define TO_UNCACHED(addr)		((unsigned long)(addr) | 0xA0000000UL)
++#define TO_CACHED(addr)			((unsigned long)(addr) | 0x80000000UL)
++
++#define UART_1				0xB2800000
++#define UART_0				0xB2600000
++#define INTC				0xB2200000
++#define SWITCH				0xB2000000
++#define MPMC				0xB1000000
++
++#endif /* ADM5120_GLB_H */
+diff --git a/include/adm5120_mpmc.h b/include/adm5120_mpmc.h
+new file mode 100644
+index 0000000..5ac74c0
+--- /dev/null
++++ b/include/adm5120_mpmc.h
+@@ -0,0 +1,123 @@
++/*
++ * Register definitions for memory controller of
++ * ADMtek/Infineon adm5120 SoC.
++ *
++ * (C) Copyright 2006
++ * Robert Delien, <robert@delien.nl>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#ifndef ADM5120_MPMC_H
++#define ADM5120_MPMC_H
++
++#define MPMC_C				0x00000000
++#define MPMC_S				0x00000004
++#define MPMC_CONF			0x00000008
++#define MPMC_DC				0x00000020
++#define MPMC_DR				0x00000024
++#define MPMC_DRP			0x00000030
++#define MPMC_DRAS			0x00000034
++#define MPMC_DSREX			0x00000038
++#define MPMC_DAPR			0x0000003C
++#define MPMC_DDAL			0x00000040
++#define MPMC_DWR			0x00000044
++#define MPMC_DRC			0x00000048
++#define MPMC_DRFC			0x0000004C
++#define MPMC_DXSR			0x00000050
++#define MPMC_DRRD			0x00000054
++#define MPMC_DMRD			0x00000058
++#define MPMC_SEW			0x00000080
++#define MPMC_DC0			0x00000100
++#define MPMC_DRC0			0x00000104
++#define MPMC_DC1			0x00000120
++#define MPMC_DRC1			0x00000124
++#define MPMC_DC2			0x00000140
++#define MPMC_DRC2			0x00000144
++#define MPMC_DC3			0x00000160
++#define MPMC_DRC3			0x00000164
++#define MPMC_SC0			0x00000200
++#define MPMC_SWW0			0x00000204
++#define MPMC_SWO0			0x00000208
++#define MPMC_SWR0			0x0000020C
++#define MPMC_SWP0			0x00000210
++#define MPMC_SWWR0			0x00000214
++#define MPMC_SWT0			0x00000218
++#define MPMC_SC1			0x00000220
++#define MPMC_SWW1			0x00000224
++#define MPMC_SWO1			0x00000228
++#define MPMC_SWR1			0x0000022C
++#define MPMC_SWP1			0x00000230
++#define MPMC_SWWR1			0x00000234
++#define MPMC_SWT1			0x00000238
++
++#define MPMC_C__AM			(1<<1)
++#define MPMC_C__ME			(1<<0)
++
++#define MPMC_DC__SI			(3<<7)
++#define MPMC_DC__SI_NORMAL		(0<<7)
++#define MPMC_DC__SI_MODE		(1<<7)
++#define MPMC_DC__SI_PALL		(2<<7)
++#define MPMC_DC__SI_NOP			(3<<7)
++#define MPMC_DC__DMC			(1<<1)
++#define MPMC_DC__CE			(1<<0)
++
++#define MPMC_DRP__PCP			0x0000000F
++
++#define MPMC_DRAS__APCP			0x0000000F
++
++#define MPMC_DSREX__SRET		0x0000000F
++
++#define MPMC_DAPR__LACT			0x0000000F
++
++#define MPMC_DDAL__DACT			0x0000000F
++
++#define MPMC_DWR__WRT			0x0000000F
++
++#define MPMC_DRC__AACP			0x0000001F
++
++#define MPMC_DRFC__ARACP		0x0000001F
++
++#define MPMC_DXSR__EACP			0x0000001F
++
++#define MPMC_DRRD__ABL			0x0000000F
++
++#define MPMC_DMRD__LACT			0x0000000F
++
++#define MPMC_DR__RT			0x000007FF
++
++#define MPMC_DCx__BE			(1<<19)
++
++#define MPMC_SCx__BLS			(1<<7)
++#define MPMC_SCx__MW			(3<<0)
++#define MPMC_SCx__MW_8BIT		(0<<0)
++#define MPMC_SCx__MW_16BIT		(1<<0)
++#define MPMC_SCx__MW_32BIT		(2<<0)
++#define MPMC_SCx__MW_RES		(3<<0)
++
++#define MPMC_SWWx__WWE			0x0000000F
++
++#define MPMC_SWOx__SWO0			0x0000000F
++
++#define MPMC_SWRx__NMRW			0x0000000F
++
++#define MPMC_SWPx__WPS			0x0000001F
++
++#define MPMC_SWWRx__WWS			0x0000001F
++
++#define MPMC_SWTx__WAITTURN		0x0000000F
++
++#endif /* ADM5120_MPMC_H */
+diff --git a/include/adm51xx_switch.h b/include/adm51xx_switch.h
+new file mode 100755
+index 0000000..01a81be
+--- /dev/null
++++ b/include/adm51xx_switch.h
+@@ -0,0 +1,369 @@
++/*
++ * Register definitions for switch controller of
++ * ADMtek/Infineon adm5120 and adm5106 SoC.
++ *
++ * (C) Copyright 2006
++ * Robert Delien, <robert@delien.nl>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#ifndef ADM51xx_SWITCH_H
++#define ADM51xx_SWITCH_H
++
++/*
++ * Layout of Switch registers
++ */
++#define SWITCH_CODE			0x00000000
++#define SWITCH_SFT_RES			0x00000004
++#define SWITCH_BOOT_D			0x00000008
++#define SWITCH_SW_RES			0x0000000C
++#define SWITCH_PHY_ST			0x00000014
++#define SWITCH_PORT_ST			0x00000018
++#define SWITCH_MEM_CONT			0x0000001C
++#define SWITCH_SW_CONF			0x00000020
++#define SWITCH_CPUP_CONF		0x00000024
++#define SWITCH_PORT_CONF0		0x00000028
++#define SWITCH_PORT_CONF1		0x0000002C
++#define SWITCH_PORT_CONF2		0x00000030
++#define SWITCH_RES_1			0x00000034
++#define SWITCH_RES_2			0x00000038
++#define SWITCH_RES_3			0x0000003C
++#define SWITCH_VLAN_GI			0x00000040
++#define SWITCH_VLAN_GII			0x00000044
++#define SWITCH_SEND_TRIG		0x00000048
++#define SWITCH_SRCH_CMD			0x0000004C
++#define SWITCH_ADDR_ST0			0x00000050
++#define SWITCH_ADDR_ST1			0x00000054
++#define SWITCH_MAC_WT0			0x00000058
++#define SWITCH_MAC_WT1			0x0000005C
++#define SWITCH_BW_CNTL0			0x00000060
++#define SWITCH_BW_CNTL1			0x00000064
++#define SWITCH_PHY_CNTL0		0x00000068
++#define SWITCH_PHY_CNTL1		0x0000006C
++#define SWITCH_FC_TH			0x00000070
++#define SWITCH_ADJ_PORT_TH		0x00000074
++#define SWITCH_PORT_TH			0x00000078
++#define SWITCH_PHY_CNTL2		0x0000007C
++#define SWITCH_PHY_CNTL3		0x00000080
++#define SWITCH_PRI_CNTL			0x00000084
++#define SWITCH_VLAN_PRI			0x00000088
++#define SWITCH_TOS_EN			0x0000008C
++#define SWITCH_TOS_MAP0			0x00000090
++#define SWITCH_TOS_MAP1			0x00000094
++#define SWITCH_CUSTOM_PRI1		0x00000098
++#define SWITCH_CUSTOM_PRI2		0x0000009C
++#define SWITCH_PHY_CNTL4		0x000000A0
++#define SWITCH_EMPTY_CNT		0x000000A4
++#define SWITCH_PORT_CNT_SEL		0x000000A8
++#define SWITCH_PORT_CNT			0x000000AC
++#define SWITCH_INT_ST			0x000000B0
++#define SWITCH_INT_MASK			0x000000B4
++#define SWITCH_GPIO_CONF0		0x000000B8
++#define SWITCH_GPIO_CONF2		0x000000BC
++#define SWITCH_WDOG_0			0x000000C0
++#define SWITCH_WDOG_1			0x000000C4
++#define SWITCH_SWAP_IN			0x000000C8
++#define SWITCH_SWAP_OUT			0x000000CC
++#define SWITCH_SEND_HBADDR		0x000000D0
++#define SWITCH_SEND_LBADDR		0x000000D4
++#define SWITCH_REC_HBADDR		0x000000D8
++#define SWITCH_REC_LBADDR		0x000000DC
++#define SWITCH_SEND_HWADDR		0x000000E0
++#define SWITCH_SEND_LWADDR		0x000000E4
++#define SWITCH_REC_HWADDR		0x000000E8
++#define SWITCH_REC_LWADDR		0x000000EC
++#define SWITCH_TIMER_INT		0x000000F0
++#define SWITCH_TIMER			0x000000F4
++#define SWITCH_RES_4			0x000000F8
++#define SWITCH_RES_5			0x000000FC
++#define SWITCH_PORT0_LED		0x00000100
++#define SWITCH_PORT1_LED		0x00000104
++#define SWITCH_PORT2_LED		0x00000108
++#define SWITCH_PORT3_LED		0x0000010C
++#define SWITCH_GL_ST			0x00000010
++#define SWITCH_PORT4_LED		0x00000110
++
++/*
++ * Generic macros
++ */
++#define SWITCH__PHYS_PORTS		5
++#define SWITCH__VLAN_PORTS		6
++#define SWITCH__PORT_0			0x01
++#define SWITCH__PORT_1			0x02
++#define SWITCH__PORT_2			0x04
++#define SWITCH__PORT_3			0x08
++#define SWITCH__PORT_4			0x10
++#define SWITCH__PORTS_PHYS		(SWITCH__PORT_0		|\
++					 SWITCH__PORT_1		|\
++					 SWITCH__PORT_2		|\
++					 SWITCH__PORT_3		|\
++					 SWITCH__PORT_4)
++#define SWITCH__PORT_GIGA		0x20
++#define SWITCH__PORTS_NET		(SWITCH__PORTS_PHYS	|\
++					 SWITCH__PORT_GIGA)
++#define SWITCH__PORT_CPU		0x40
++#define SWITCH__PORTS_ALL		(SWITCH__PORTS_NET	|\
++					 SWITCH__PORT_CPU)
++
++/*
++ * Code register fields
++ */
++#define SWITCH_CODE__PK			(0x00000001<<29)
++#define SWITCH_CODE__CLKS		(0x00000003<<20)
++#define SWITCH_CODE__CLKS_175MHZ	(0x00000000<<20)
++#define SWITCH_CODE__CLKS_200MHZ	(0x00000001<<20)
++#define SWITCH_CODE__CLKS_RES1		(0x00000002<<20)
++#define SWITCH_CODE__CLKS_RES2		(0x00000003<<20)
++#define SWITCH_CODE__REV		(0x0000000F<<16)
++#define SWITCH_CODE__PC			(0x0000FFFF<<0)
++
++/*
++ * CPU port configuration register fields
++ */
++#define SWITCH_CPUP_CONF__DBCP		(SWITCH__PORTS_NET<<24)
++#define SWITCH_CPUP_CONF__DBCP_SET(set)	(((set)&(SWITCH__PORTS_NET))<<24)
++#define SWITCH_CPUP_CONF__DMCP		(SWITCH__PORTS_NET<<16)
++#define SWITCH_CPUP_CONF__DMCP_SET(set)	(((set)&(SWITCH__PORTS_NET))<<16)
++#define SWITCH_CPUP_CONF__DUNP		(SWITCH__PORTS_NET<<9)
++#define SWITCH_CPUP_CONF__DUNP_SET(set)	(((set)&(SWITCH__PORTS_NET))<<9)
++#define SWITCH_CPUP_CONF__BTM		(0x00000001<<2)
++#define SWITCH_CPUP_CONF__CRCP		(0x00000001<<1)
++#define SWITCH_CPUP_CONF__DCPUP		(0x00000001<<0)
++
++/*
++ * Port configuration 0 register fields
++ */
++#define SWITCH_PORT_CONF0__EBP		(SWITCH__PORTS_NET<<16)
++#define SWITCH_PORT_CONF0__EBP_SET(set)	(((set)&(SWITCH__PORTS_NET))<<16)
++#define SWITCH_PORT_CONF0__EMCP		(SWITCH__PORTS_NET<<8)
++#define SWITCH_PORT_CONF0__EMCP_SET(set)(((set)&(SWITCH__PORTS_NET))<<8)
++#define SWITCH_PORT_CONF0__DP		(SWITCH__PORTS_NET<<0)
++#define SWITCH_PORT_CONF0__DP_SET(set)	(((set)&(SWITCH__PORTS_NET))<<0)
++
++/*
++ * Port configuration 1 register fields
++ */
++#define SWITCH_PORT_CONF1__SASM		(SWITCH__PORTS_NET<<26)
++#define SWITCH_PORT_CONF1__SASM_SET(set) (((set)&(SWITCH__PORTS_NET))<<26)
++#define SWITCH_PORT_CONF1__PA		(SWITCH__PORTS_NET<<20)
++#define SWITCH_PORT_CONF1__PA_SET(set)	(((set)&(SWITCH__PORTS_NET))<<20)
++#define SWITCH_PORT_CONF1__BM		(SWITCH__PORTS_NET<<12)
++#define SWITCH_PORT_CONF1__BM_SET(set)	(((set)&(SWITCH__PORTS_NET))<<12)
++#define SWITCH_PORT_CONF1__BS		(SWITCH__PORTS_NET<<6)
++#define SWITCH_PORT_CONF1__BS_SET(set)	(((set)&(SWITCH__PORTS_NET))<<6)
++#define SWITCH_PORT_CONF1__DISL		(SWITCH__PORTS_NET<<0)
++#define SWITCH_PORT_CONF1__DISL_SET(set) (((set)&(SWITCH__PORTS_NET))<<0)
++
++/*
++ * Port configuration 2 register fields
++ */
++#define SWITCH_PORT_CONF2__DUPF		(SWITCH__PORTS_NET<<18)
++#define SWITCH_PORT_CONF2__DUPF_SET(set) (((set)&(SWITCH__PORTS_NET))<<18)
++#define SWITCH_PORT_CONF2__LEDFT	(0x00000003<<16)
++#define SWITCH_PORT_CONF2__LEDFT_30	(0x00000000<<16)
++#define SWITCH_PORT_CONF2__LEDFT_60	(0x00000001<<16)
++#define SWITCH_PORT_CONF2__LEDFT_240	(0x00000002<<16)
++#define SWITCH_PORT_CONF2__LEDFT_480	(0x00000003<<16)
++#define SWITCH_PORT_CONF2__CER		(0x00000003<<9)
++#define SWITCH_PORT_CONF2__CER_0	(0x00000000<<9)
++#define SWITCH_PORT_CONF2__CER_1	(0x00000001<<9)
++#define SWITCH_PORT_CONF2__CER_2	(0x00000002<<9)
++#define SWITCH_PORT_CONF2__CER_3	(0x00000003<<9)
++#define SWITCH_PORT_CONF2__TXCC		(0x00000001<<8)
++#define SWITCH_PORT_CONF2__RMIIM	(0x00000001<<7)
++#define SWITCH_PORT_CONF2__FMPFC	(0x00000003<<4)
++#define SWITCH_PORT_CONF2__FMPFC_RX	(0x00000001<<4)
++#define SWITCH_PORT_CONF2__FMPFC_TX	(0x00000002<<4)
++#define SWITCH_PORT_CONF2__FMPFC_RXTX	(0x00000003<<4)
++#define SWITCH_PORT_CONF2__FMDP		(0x00000001<<3)
++#define SWITCH_PORT_CONF2__FMPS		(0x00000003<<1)
++#define SWITCH_PORT_CONF2__FMPS_10M	(0x00000000<<1)
++#define SWITCH_PORT_CONF2__FMPS_100M	(0x00000001<<1)
++#define SWITCH_PORT_CONF2__FMPS_1G	(0x00000002<<1)
++#define SWITCH_PORT_CONF2__GMIIAN	(0x00000001<<0)
++
++/*
++ * VLAN Group 1 register fields
++ */
++#define SWITCH_VLAN_GI__VLAN3		(SWITCH__PORTS_ALL<<24)
++#define SWITCH_VLAN_GI__VLAN3_SET(set)	(((set)&(SWITCH__PORTS_ALL))<<24)
++#define SWITCH_VLAN_GI__VLAN2		(SWITCH__PORTS_ALL<<16)
++#define SWITCH_VLAN_GI__VLAN2_SET(set)	(((set)&(SWITCH__PORTS_ALL))<<16)
++#define SWITCH_VLAN_GI__VLAN1		(SWITCH__PORTS_ALL<<8)
++#define SWITCH_VLAN_GI__VLAN1_SET(set)	(((set)&(SWITCH__PORTS_ALL))<<8)
++#define SWITCH_VLAN_GI__VLAN0		(SWITCH__PORTS_ALL<<0)
++#define SWITCH_VLAN_GI__VLAN0_SET(set)	(((set)&(SWITCH__PORTS_ALL))<<0)
++
++/*
++ * VLAN Group 2 register fields
++ */
++#define SWITCH_VLAN_GII__VLAN5		(SWITCH__PORTS_ALL<<8)
++#define SWITCH_VLAN_GII__VLAN5_SET(set)	(((set)&(SWITCH__PORTS_ALL))<<8)
++#define SWITCH_VLAN_GII__VLAN4		(SWITCH__PORTS_ALL<<0)
++#define SWITCH_VLAN_GII__VLAN4_SET(set)	(((set)&(SWITCH__PORTS_ALL))<<0)
++
++/*
++ * Send trigger register fields
++ */
++#define SWITCH_SEND_TRIG__STH		(0x00000001<<1)
++#define SWITCH_SEND_TRIG__STL		(0x00000001<<0)
++
++/*
++ * MAC Write Address 0 register fields
++ */
++#define SWITCH_MAC_WT0__MWA		(0x0000FFFF<<16)
++#define SWITCH_MAC_WT0__MWA_B0(b0)	(((b0)&(0xFF))<<16)
++#define SWITCH_MAC_WT0__MWA_B1(b1)	(((b1)&(0xFF))<<24)
++#define SWITCH_MAC_WT0__WAF		(0x00000007<<13)
++#define SWITCH_MAC_WT0__WAF_SET(set)	(((set)&(0x00000007))<<13)
++#define SWITCH_MAC_WT0__WPMN		(0x0000003F<<7)
++#define SWITCH_MAC_WT0__WPMN_SET(set)	(((set)&(0x0000003F))<<7)
++#define SWITCH_MAC_WT0__WVE		(0x00000001<<6)
++#define SWITCH_MAC_WT0__WVN		(0x00000007<<3)
++#define SWITCH_MAC_WT0__WVN_SET(set)	(((set)&(0x00000007))<<3)
++#define SWITCH_MAC_WT0__WFB		(0x00000001<<2)
++#define SWITCH_MAC_WT0__MWD		(0x00000001<<1)
++#define SWITCH_MAC_WT0__MAWC		(0x00000001<<0)
++
++/*
++ * MAC Write Address 1 register fields
++ */
++#define SWITCH_MAC_WT1__MWA		(0xFFFFFFFF<<0)
++#define SWITCH_MAC_WT1__MWA_B5(b5)	(((b5)&(0xFF))<<24)
++#define SWITCH_MAC_WT1__MWA_B4(b4)	(((b4)&(0xFF))<<16)
++#define SWITCH_MAC_WT1__MWA_B3(b3)	(((b3)&(0xFF))<<8)
++#define SWITCH_MAC_WT1__MWA_B2(b2)	(((b2)&(0xFF))<<0)
++
++/*
++ * PHY Control 2 register fields
++ */
++#define SWITCH_PHY_CNTL2__RMAE		(0x00000001<<30)
++#define SWITCH_PHY_CNTL2__AMDIX		(SWITCH__PORTS_PHYS<<25)
++#define SWITCH_PHY_CNTL2__AMDIX_SET(set) (((set)&(SWITCH__PORTS_PHYS))<<25)
++#define SWITCH_PHY_CNTL2__PHYR		(SWITCH__PORTS_PHYS<<20)
++#define SWITCH_PHY_CNTL2__PHYR_SET(set)	(((set)&(SWITCH__PORTS_PHYS))<<20)
++#define SWITCH_PHY_CNTL2__RFCV		(SWITCH__PORTS_PHYS<<15)
++#define SWITCH_PHY_CNTL2__RFCV_SET(set)	(((set)&(SWITCH__PORTS_PHYS))<<15)
++#define SWITCH_PHY_CNTL2__DC		(SWITCH__PORTS_PHYS<<10)
++#define SWITCH_PHY_CNTL2__DC_SET(set)	(((set)&(SWITCH__PORTS_PHYS))<<10)
++#define SWITCH_PHY_CNTL2__SC		(SWITCH__PORTS_PHYS<<5)
++#define SWITCH_PHY_CNTL2__SC_SET(set)	(((set)&(SWITCH__PORTS_PHYS))<<5)
++#define SWITCH_PHY_CNTL2__ANE		(SWITCH__PORTS_PHYS<<0)
++#define SWITCH_PHY_CNTL2__ANE_SET(set)	(((set)&(SWITCH__PORTS_PHYS))<<0)
++
++/*
++ * PHY Control 3 register fields
++ */
++#define SWITCH_PHY_CNTL3__FXE		(SWITCH__PORTS_PHYS<<17)
++#define SWITCH_PHY_CNTL3__FXE_SET(set)	(((set)&(SWITCH__PORTS_PHYS))<<17)
++#define SWITCH_PHY_CNTL3__DFEFI		(0x00000001<<16)
++#define SWITCH_PHY_CNTL3__CBDE		(0x00000001<<15)
++#define SWITCH_PHY_CNTL3__RPIC		(0x00000001<<14)
++#define SWITCH_PHY_CNTL3__RPLFT		(0x00000003<<12)
++#define SWITCH_PHY_CNTL3__RPLFT_2	(0x00000000<<12)
++#define SWITCH_PHY_CNTL3__RPLFT_3	(0x00000001<<12)
++#define SWITCH_PHY_CNTL3__RPLFT_4	(0x00000002<<12)
++#define SWITCH_PHY_CNTL3__RPLFT_8	(0x00000003<<12)
++#define SWITCH_PHY_CNTL3__RFGL		(0x00000001<<11)
++#define SWITCH_PHY_CNTL3__RNT		(0x00000001<<10)
++#define SWITCH_PHY_CNTL3__RTJD		(0x00000001<<9)
++#define SWITCH_PHY_CNTL3__RRJE		(0x00000001<<8)
++#define SWITCH_PHY_CNTL3__RADP		(0x00000001<<7)
++#define SWITCH_PHY_CNTL3__IINSEL	(0x00000001<<6)
++#define SWITCH_PHY_CNTL3__RSHC		(0x00000003<<4)
++#define SWITCH_PHY_CNTL3__RSHC_VAL(val)	(((val)&(0x00000003))<<4)
++#define SWITCH_PHY_CNTL3__PFRV		(0x00000003<<2)
++#define SWITCH_PHY_CNTL3__PFRV_VAL(val)	(((val)&(0x00000003))<<2)
++#define SWITCH_PHY_CNTL3__RBLL		(0x00000003<<0)
++#define SWITCH_PHY_CNTL3__RBLL_VAL(val)	(((val)&(0x00000003))<<0)
++
++
++/*
++ * Interrupt mask register fields
++ */
++#define SWITCH_INT_MASK__CPUH		(0x00000001<<24)
++#define SWITCH_INT_MASK__SDE		(0x00000001<<23)
++#define SWITCH_INT_MASK__RDE		(0x00000001<<22)
++#define SWITCH_INT_MASK__W1TE		(0x00000001<<21)
++#define SWITCH_INT_MASK__W0TE		(0x00000001<<20)
++#define SWITCH_INT_MASK__MI		(0x00000001<<19)
++#define SWITCH_INT_MASK__PSC		(0x00000001<<18)
++#define SWITCH_INT_MASK__BCS		(0x00000001<<16)
++#define SWITCH_INT_MASK__MD		(0x00000001<<15)
++#define SWITCH_INT_MASK__GQF		(0x00000001<<14)
++#define SWITCH_INT_MASK__CPUQ		(0x00000001<<13)
++#define SWITCH_INT_MASK__P5QF		(0x00000001<<11)
++#define SWITCH_INT_MASK__P4QF		(0x00000001<<10)
++#define SWITCH_INT_MASK__P3QF		(0x00000001<<9)
++#define SWITCH_INT_MASK__P2QF		(0x00000001<<8)
++#define SWITCH_INT_MASK__P1QF		(0x00000001<<7)
++#define SWITCH_INT_MASK__P0QF		(0x00000001<<6)
++#define SWITCH_INT_MASK__LDF		(0x00000001<<5)
++#define SWITCH_INT_MASK__HDF		(0x00000001<<4)
++#define SWITCH_INT_MASK__RLD		(0x00000001<<3)
++#define SWITCH_INT_MASK__RHD		(0x00000001<<2)
++#define SWITCH_INT_MASK__SLD		(0x00000001<<1)
++#define SWITCH_INT_MASK__SHD		(0x00000001<<0)
++#define SWITCH_INT_MASK__ALL_INTS	(SWITCH_INT_MASK__CPUH	|\
++					 SWITCH_INT_MASK__SDE	|\
++					 SWITCH_INT_MASK__RDE	|\
++					 SWITCH_INT_MASK__W1TE	|\
++					 SWITCH_INT_MASK__W0TE	|\
++					 SWITCH_INT_MASK__MI	|\
++					 SWITCH_INT_MASK__PSC	|\
++					 SWITCH_INT_MASK__BCS	|\
++					 SWITCH_INT_MASK__MD	|\
++					 SWITCH_INT_MASK__GQF	|\
++					 SWITCH_INT_MASK__CPUQ	|\
++					 SWITCH_INT_MASK__P5QF	|\
++					 SWITCH_INT_MASK__P4QF	|\
++					 SWITCH_INT_MASK__P3QF	|\
++					 SWITCH_INT_MASK__P2QF	|\
++					 SWITCH_INT_MASK__P1QF	|\
++					 SWITCH_INT_MASK__P0QF 	|\
++					 SWITCH_INT_MASK__LDF	|\
++					 SWITCH_INT_MASK__HDF	|\
++					 SWITCH_INT_MASK__RLD	|\
++					 SWITCH_INT_MASK__RHD	|\
++					 SWITCH_INT_MASK__SLD	|\
++					 SWITCH_INT_MASK__SHD)
++
++#define SWITCH_TIMER_INT__TOS		(0x00000001<<0)
++
++#define SWITCH_MEM_CONT__SR0S		(0x00000007<<16)
++#define SWITCH_MEM_CONT__SR0S_DISABLED	(0x00000000<<16)
++#define SWITCH_MEM_CONT__SR0S_512KB	(0x00000001<<16)
++#define SWITCH_MEM_CONT__SR0S_1MB	(0x00000002<<16)
++#define SWITCH_MEM_CONT__SR0S_2MB	(0x00000003<<16)
++#define SWITCH_MEM_CONT__SR0S_4MB	(0x00000004<<16)
++#define SWITCH_MEM_CONT__SR0S_8MB	(0x00000005<<16)
++#define SWITCH_MEM_CONT__SR0S_RES1	(0x00000006<<16)
++#define SWITCH_MEM_CONT__SR0S_RES2	(0x00000007<<16)
++
++#define SWITCH_MEM_CONT__SDR1E		(0x00000001<<5)
++
++#define SWITCH_MEM_CONT__SDRS		(0x00000007<<0)
++#define SWITCH_MEM_CONT__SDRS_RES1	(0x00000000<<0)
++#define SWITCH_MEM_CONT__SDRS_1Mx32	(0x00000001<<0)
++#define SWITCH_MEM_CONT__SDRS_2Mx32	(0x00000002<<0)
++#define SWITCH_MEM_CONT__SDRS_4Mx32	(0x00000003<<0)
++#define SWITCH_MEM_CONT__SDRS_16Mx32	(0x00000004<<0)
++#define SWITCH_MEM_CONT__SDRS_32Mx32	(0x00000005<<0)
++#define SWITCH_MEM_CONT__SDRS_RES2	(0x00000006<<0)
++#define SWITCH_MEM_CONT__SDRS_RES3	(0x00000007<<0)
++
++#endif /* ADM51xx_SWITCH_H */
+diff --git a/include/asm-mips/adm5120.h b/include/asm-mips/adm5120.h
+new file mode 100644
+index 0000000..9333c9f
+--- /dev/null
++++ b/include/asm-mips/adm5120.h
+@@ -0,0 +1,24 @@
++#ifdef CONFIG_ADM5120
++
++#include <asm/addrspace.h>
++
++#define ADM5120_UART1_BASE	0x12800000
++#define ADM5120_UART0_BASE	0x12600000
++#define ADM5120_SYSC_BASE	0x12400000
++#define ADM5120_INTC_BASE	0x12200000
++#define ADM5120_SCR_BASE	0x12000000
++#define ADM5120_MIPS_BASE	0x11a00000
++#define ADM5120_PCIIO_BASE	0x11500000
++#define ADM5120_PCIIO_END	(0x115ffff0-1)
++#define ADM5120_PCI_CONFIG_ADDR	0x115ffff0
++#define ADM5120_PCI_CONFIG_DATA	0x115ffff8
++#define ADM5120_PCIMEM_BASE	0x11400000
++#define ADM5120_PCIMEM_END	0x114fffff
++#define ADM5120_USB_BASE	0x11200000
++#define ADM5120_MPMC_BASE	0x11000000
++
++#define SOFTWARE_RESET						0x1
++#define SW_CPU_PORT_DISABLE					0x00000001
++#define SW_DISABLE_PORT_MASK					0x0000003F
++
++#endif
+diff --git a/include/asm-mips/io.h b/include/asm-mips/io.h
+index 857fb03..314ada6 100644
+--- a/include/asm-mips/io.h
++++ b/include/asm-mips/io.h
+@@ -150,6 +150,11 @@ extern void iounmap(void *addr);
+ #endif
+ 
+ /*
++ * Some drivers need a memory barrier
++ */
++#define barrier()	asm volatile ("sync")
++
++/*
+  * XXX We need system specific versions of these to handle EISA address bits
+  * 24-31 on SNI.
+  * XXX more SNI hacks.
+@@ -439,12 +444,26 @@ #define IO_SPACE_LIMIT 0xffff
+  *    be discarded.  This operation is necessary before dma operations
+  *    to the memory.
+  */
+-extern void (*_dma_cache_wback_inv)(unsigned long start, unsigned long size);
+-extern void (*_dma_cache_wback)(unsigned long start, unsigned long size);
+-extern void (*_dma_cache_inv)(unsigned long start, unsigned long size);
++extern void *_dma_cache_wback_inv(unsigned long start, unsigned long size);
++extern void *_dma_cache_wback(unsigned long start, unsigned long size);
++extern void *_dma_cache_inv(unsigned long start, unsigned long size);
+ 
+ #define dma_cache_wback_inv(start,size)	_dma_cache_wback_inv(start,size)
+ #define dma_cache_wback(start,size)	_dma_cache_wback(start,size)
+ #define dma_cache_inv(start,size)	_dma_cache_inv(start,size)
+ 
++/*
++ * XXX: MIPS doesn't provide in_le32 etc functions. The externs
++ *      supplied here are just satisfying pci_indirect.c.
++ *	Some rework of pci_indirect.c may be required for indirect
++ *	PCI bridge support on both big and little endian MIPS targets.
++ */
++extern unsigned char	in_8     (volatile  u8 *addr);
++extern unsigned short	in_le16  (volatile u16 *addr);
++extern unsigned		in_le32  (volatile u32 *addr);
++extern void		out_8    (volatile  u8 *addr, char val);
++extern void		out_le16 (volatile u16 *addr, unsigned short val);
++extern void		out_le32 (volatile u32 *addr, unsigned int val);
++
++
+ #endif /* _ASM_IO_H */
+diff --git a/include/configs/adm5120.h b/include/configs/adm5120.h
+new file mode 100644
+index 0000000..3398327
+--- /dev/null
++++ b/include/configs/adm5120.h
+@@ -0,0 +1,141 @@
++/*
++ * (C) Copyright 2006
++ * Robert Delien, <robert@delien.nl>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++/*
++ * Config header file for Infineon/ADMtek ADM5120 SoC
++ * This Soc is used in several broadband routers. A long list of
++ * routers using this SoC be found here:
++ * http://www.linux-mips.org/wiki/Adm5120#Products_based_on_the_ADM5120
++ */
++
++#ifndef __CONFIG_H
++#define __CONFIG_H
++
++#include <adm5120_glb.h>
++
++#define CONFIG_MIPS32				/* MIPS 4Kc CPU core			*/
++#define CONFIG_ADM5120				/* on the ADM5120 SoC			*/
++
++#define CPU_CLOCK_RATE		175000000	/* 175 MHz clock for the MIPS core	*/
++
++#define CONFIG_BOOTDELAY	5		/* autoboot after 5 seconds		*/
++
++#define CONFIG_TIMESTAMP			/* Print image info with timestamp	*/
++
++#define CONFIG_BOOTFILE		vmlinux.bin
++#define CONFIG_LOADADDR		0x80002000
++#define CONFIG_BOOTCOMMAND	"tftp; go 800026D8"
++
++#define CONFIG_COMMANDS		(CONFIG_CMD_DFL		|\
++				 CFG_CMD_DHCP		|\
++				 CFG_CMD_PING)
++#include <cmd_confdefs.h>
++
++/*
++ * Miscellaneous configurable options
++ */
++#define CFG_LONGHELP				/* undef to save memory	     */
++#define	CFG_PROMPT		"ADM5120 # "	/* Monitor Command Prompt    */
++#define CFG_CBSIZE		256		/* Console I/O Buffer Size   */
++#define CFG_PBSIZE		(CFG_CBSIZE+sizeof(CFG_PROMPT)+16)  /* Print Buffer Size */
++#define CFG_MAXARGS		16		/* max number of command args*/
++
++#define CFG_MALLOC_LEN		128*1024
++
++#define CFG_BOOTPARAMS_LEN	128*1024
++
++#define CFG_CP0_COUNT_RATE	((CPU_CLOCK_RATE)/2)
++#define CFG_HZ			1000
++
++#define CFG_SDRAM_BASE		0x80000000
++#define CFG_SDRAM_MAX		0x08000000	/* Maximum 128MiB of SDRAM	*/
++#define CFG_INIT_SP_OFFSET	0x00040000	/* Initial stack at 512kiB	*/
++
++#define CFG_LOAD_ADDR		((CFG_SDRAM_BASE)+(0x00010000))	/* default load address */
++
++#define CFG_MEMTEST_START	(CFG_SDRAM_BASE)
++#define CFG_MEMTEST_END		((CFG_SDRAM_BASE)+(CFG_INIT_SP_OFFSET))
++#define CFG_SCR_BASE		ADM5120_SCR_BASE
++
++
++/*-----------------------------------------------------------------------
++ * FLASH and environment organization
++ */
++#define CFG_FLASH_CFI				/* flash is CFI compatible	*/
++#define CFG_FLASH_CFI_DRIVER			/* Use common CFI driver	*/
++#define CFG_FLASH_EMPTY_INFO			/* print 'E' for empty sector	*/
++#define CFG_MAX_FLASH_SECT	128		/* max number of sectors on one chip */
++#define CFG_MAX_FLASH_BANKS	1		/* max number of memory banks */
++#define CFG_FLASH_BASE		0xBFC00000
++
++
++/* The following #defines are needed to get flash environment right */
++#define CFG_MONITOR_BASE	TEXT_BASE
++#define CFG_MONITOR_LEN		(192 << 10)
++
++/* timeout values are in ticks */
++#define CFG_FLASH_ERASE_TOUT	20000	/* Timeout for Flash Erase in ms */
++#define CFG_FLASH_WRITE_TOUT	2000	/* Timeout for Flash Write in ms */
++
++#define CONFIG_ADM51xx_SWITCH
++#define CONFIG_ADM51xx_SWITCH_BASE	KSEG1ADDR(0x12000000)
++#define CONFIG_NET_MULTI
++#define CONFIG_ETHADDR			00:A0:C9:A2:EE:B2	/* Ethernet address */
++#define CONFIG_SERVERIP			192.168.1.10		/* IP address of tftp server */
++#define CONFIG_IPADDR			192.168.1.25		/* Our IP address */
++#define CONFIG_NETMASK			255.255.255.0		/* Our net mask */
++
++
++/* Address and size of Primary Environment Sector	*/
++#define CFG_ENV_IS_IN_FLASH
++#define CFG_ENV_ADDR		0xBFDF0000
++#define CFG_ENV_SIZE		0x00010000
++
++#define CFG_DIRECT_FLASH_TFTP
++
++#define CONFIG_NR_DRAM_BANKS	2
++
++/*-----------------------------------------------------------------------
++ * Cache Configuration
++ */
++#define CFG_DCACHE_SIZE		8192		/*  8 kiB data cache		*/
++#define CFG_ICACHE_SIZE		8192		/*  8 kiB instruction cache	*/
++#define CFG_CACHELINE_SIZE	16		/* 16 Byte cache line size	*/
++
++/*-----------------------------------------------------------------------
++ * Serial Configuration
++ */
++#define CFG_PL010_SERIAL
++#define CFG_UART_PL010_CLOCK	62500000	/* 62.5MHz in AMD5120P */
++#define CFG_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200 }
++#define CFG_SERIAL0		0xB2600000
++#define CFG_SERIAL1		0xB2800000
++#define CONFIG_CONS_INDEX	0
++#define CONFIG_BAUDRATE		115200
++#define CONFIG_PL01x_PORTS	{ (void *) (CFG_SERIAL0), (void *) (CFG_SERIAL1) }
++
++/*-----------------------------------------------------------------------
++ * Console configuration
++ */
++#define CFG_HUSH_PARSER				/* Enable HUSH shell parser	*/
++#define CFG_PROMPT_HUSH_PS2	"> "		/* Configure HUSH sec. prompt	*/
++#define CONFIG_CMDLINE_EDITING			/* Enable command line editing	*/
++
++#endif	/* __CONFIG_H */
+diff --git a/include/configs/dbau1x00.h b/include/configs/dbau1x00.h
+index 4cc5085..3206125 100644
+--- a/include/configs/dbau1x00.h
++++ b/include/configs/dbau1x00.h
+@@ -112,7 +112,8 @@ #if (CFG_MHZ % 12) != 0
+ #error "Invalid CPU frequency - must be multiple of 12!"
+ #endif
+ 
+-#define CFG_HZ                  (CFG_MHZ * 1000000) /* FIXME causes overflow in net.c */
++#define CFG_CP0_COUNT_RATE	(CFG_MHZ * 1000000)
++#define CFG_HZ			1000
+ 
+ #define CFG_SDRAM_BASE		0x80000000     /* Cached addr */
+ 
+diff --git a/include/configs/gth2.h b/include/configs/gth2.h
+index a49ed3b..0a56b6f 100644
+--- a/include/configs/gth2.h
++++ b/include/configs/gth2.h
+@@ -93,7 +93,8 @@ #define CFG_BOOTPARAMS_LEN	128*1024
+ 
+ #define CFG_MHZ			500
+ 
+-#define CFG_HZ			(CFG_MHZ * 1000000) /* FIXME causes overflow in net.c */
++#define CFG_CP0_COUNT_RATE	(CFG_MHZ * 1000000)
++#define CFG_HZ			1000
+ 
+ #define CFG_SDRAM_BASE		0x80000000     /* Cached addr */
+ 
+diff --git a/include/configs/incaip.h b/include/configs/incaip.h
+index 1c6216b..c62c57a 100644
+--- a/include/configs/incaip.h
++++ b/include/configs/incaip.h
+@@ -33,7 +33,7 @@ #define CONFIG_INCA_IP		1	/* on a INCA-I
+ 
+ #ifndef	CPU_CLOCK_RATE
+ /* allowed values: 100000000, 133000000, and 150000000 */
+-#define CPU_CLOCK_RATE	150000000	/* default: 150 MHz clock for the MIPS core */
++#define CPU_CLOCK_RATE		150000000	/* default: 150 MHz clock for the MIPS core */
+ #endif
+ 
+ #define INFINEON_EBU_BOOTCFG	0x40C4	/* CMULT = 8 */
+@@ -104,7 +104,8 @@ #define CFG_MALLOC_LEN		128*1024
+ 
+ #define CFG_BOOTPARAMS_LEN	128*1024
+ 
+-#define CFG_HZ			(incaip_get_cpuclk() / 2)
++#define CFG_CP0_COUNT_RATE	(incaip_get_cpuclk() / 2)
++#define CFG_HZ			1000
+ 
+ #define CFG_SDRAM_BASE		0x80000000
+ 
+diff --git a/include/configs/integratorap.h b/include/configs/integratorap.h
+index 2f6e399..b7561ed 100644
+--- a/include/configs/integratorap.h
++++ b/include/configs/integratorap.h
+@@ -65,6 +65,7 @@ #define CONFIG_PL01x_PORTS	{ (void *) (C
+ #define CFG_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200 }
+ #define CFG_SERIAL0		0x16000000
+ #define CFG_SERIAL1		0x17000000
++#define CFG_UART_PL010_CLOCK	14745600	/* 14.7456MHz */
+ 
+ /*#define CONFIG_COMMANDS	(CFG_CMD_DHCP | CFG_CMD_IMI | CFG_CMD_NET | CFG_CMD_PING | CFG_CMD_BDI | CFG_CMD_PCI) */
+ /*#define CONFIG_NET_MULTI */
+diff --git a/include/configs/mcc200.h b/include/configs/mcc200.h
+index 0c935bf..f60973b 100644
+--- a/include/configs/mcc200.h
++++ b/include/configs/mcc200.h
+@@ -94,6 +94,8 @@ #define CONFIG_DOS_PARTITION
+ #define CONFIG_USB_OHCI
+ #define ADD_USB_CMD		CFG_CMD_USB | CFG_CMD_FAT
+ #define CONFIG_USB_STORAGE
++/* automatic software updates (see board/mcc200/auto_update.c) */
++#define CONFIG_AUTO_UPDATE 1
+ 
+ /*
+  * Supported commands
+@@ -173,7 +175,7 @@ #define CFG_IPBSPEED_133		/* define for 
+  * I2C configuration
+  */
+ #define CONFIG_HARD_I2C		1	/* I2C with hardware support */
+-#define CFG_I2C_MODULE		1	/* Select I2C module #1 or #2 */
++#define CFG_I2C_MODULE		2	/* Select I2C module #1 or #2 */
+ 
+ #define CFG_I2C_SPEED		100000 /* 100 kHz */
+ #define CFG_I2C_SLAVE		0x7F
+diff --git a/include/configs/purple.h b/include/configs/purple.h
+index 2ecb7fb..28d11e5 100644
+--- a/include/configs/purple.h
++++ b/include/configs/purple.h
+@@ -31,8 +31,8 @@ #define __CONFIG_H
+ #define CONFIG_MIPS32		1	/* MIPS 5Kc CPU core	*/
+ #define CONFIG_PURPLE		1	/* on a PURPLE Board	*/
+ 
+-#define CPU_CLOCK_RATE	125000000   /* 125 MHz clock for the MIPS core */
+-#define ASC_CLOCK_RATE	 62500000   /* 62.5 MHz ASC clock              */
++#define CPU_CLOCK_RATE		125000000   /* 125 MHz clock for the MIPS core */
++#define ASC_CLOCK_RATE		62500000   /* 62.5 MHz ASC clock              */
+ 
+ #define INFINEON_EBU_BOOTCFG	0xE0CC
+ 
+@@ -99,7 +99,8 @@ #define	CFG_LONGHELP				/* undef to save
+ #define	CFG_PROMPT		"PURPLE # "	/* Monitor Command Prompt    */
+ #define	CFG_CBSIZE		256		/* Console I/O Buffer Size   */
+ #define	CFG_PBSIZE (CFG_CBSIZE+sizeof(CFG_PROMPT)+16)  /* Print Buffer Size */
+-#define CFG_HZ			(CPU_CLOCK_RATE/2)
++#define CFG_CP0_COUNT_RATE	(CPU_CLOCK_RATE/2)
++#define CFG_HZ			1000
+ #define	CFG_MAXARGS		16		/* max number of command args*/
+ 
+ #define	CFG_LOAD_ADDR		0x80500000	/* default load address	*/
+diff --git a/lib_mips/time.c b/lib_mips/time.c
+index cd8dc72..9c9529c 100644
+--- a/lib_mips/time.c
++++ b/lib_mips/time.c
+@@ -22,62 +22,56 @@
+  */
+ 
+ #include <common.h>
++#include <asm/mipsregs.h>
+ 
+-
+-static inline void mips_compare_set(u32 v)
+-{
+-	asm volatile ("mtc0 %0, $11" : : "r" (v));
+-}
+-
+-static inline void mips_count_set(u32 v)
+-{
+-	asm volatile ("mtc0 %0, $9" : : "r" (v));
+-}
+-
+-
+-static inline u32 mips_count_get(void)
+-{
+-	u32 count;
+-
+-	asm volatile ("mfc0 %0, $9" : "=r" (count) :);
+-	return count;
+-}
++#define TICKS_PER_USEC		1000000
+ 
+ /*
+  * timer without interrupts
+  */
+-
+ int timer_init(void)
+ {
+-	mips_compare_set(0);
+-	mips_count_set(0);
++#ifdef CONFIG_MIPS_CPU_PR4450
++	int configPR;
+ 
+-	return 0;
+-}
++	/* enable and start counter */
++	configPR = read_c0_configPR();
++	configPR &= ~0x8;
++	write_c0_configPR(configPR);
+ 
+-void reset_timer(void)
+-{
+-	mips_count_set(0);
+-}
++#endif /* CONFIG_MIPS_CPU_PR4450 */
+ 
+-ulong get_timer(ulong base)
+-{
+-	return mips_count_get() - base;
++	write_32bit_cp0_register(CP0_COUNT, 0);
++	write_32bit_cp0_register(CP0_COMPARE, ~0);
++
++	return 0;
+ }
+ 
+-void set_timer(ulong t)
++ulong get_timer(ulong base)
+ {
+-	mips_count_set(t);
++	return (read_32bit_cp0_register(CP0_COUNT)/(CFG_CP0_COUNT_RATE/CFG_HZ)) - base;
+ }
+ 
+ void udelay (unsigned long usec)
+ {
+-	ulong tmo;
+-	ulong start = get_timer(0);
++	ulong startTicks = read_32bit_cp0_register(CP0_COUNT);
++	ulong delayTicks = usec*(CFG_CP0_COUNT_RATE/TICKS_PER_USEC);
++	ulong endTicks;
++
++	/* Safeguard for too-long delays */
++	if (delayTicks >= 0x80000000)
++		delayTicks = 0x7FFFFFFF;
++
++	/* Calculate end of delay (once) */
++	endTicks = startTicks + delayTicks;
++
++	/* If end of delay is behind COUNT rol-over, wait for COUNT to rol-over first */
++	while ((read_32bit_cp0_register(CP0_COUNT) & 0x80000000) > (endTicks & 0x80000000))
++		; /* nop */
+ 
+-	tmo = usec * (CFG_HZ / 1000000);
+-	while ((ulong)((mips_count_get() - start)) < tmo)
+-		/*NOP*/;
++	/* Wait for end of delay */
++	while (read_32bit_cp0_register(CP0_COUNT) < endTicks)
++		; /* nop */
+ }
+ 
+ /*
+@@ -86,7 +80,7 @@ void udelay (unsigned long usec)
+  */
+ unsigned long long get_ticks(void)
+ {
+-	return mips_count_get();
++	return read_32bit_cp0_register(CP0_COUNT);
+ }
+ 
+ /*
+@@ -95,5 +89,5 @@ unsigned long long get_ticks(void)
+  */
+ ulong get_tbclk(void)
+ {
+-	return CFG_HZ;
++	return CFG_CP0_COUNT_RATE;
+ }
+diff --git a/net/eth.c b/net/eth.c
+index cca9392..10a6f67 100644
+--- a/net/eth.c
++++ b/net/eth.c
+@@ -222,6 +222,9 @@ #endif
+ #if defined(CONFIG_AU1X00)
+ 	au1x00_enet_initialize(bis);
+ #endif
++#if defined(CONFIG_ADM5120)
++	adm5120_eth_initialize(bis);
++#endif
+ #if defined(CONFIG_IXP4XX_NPE)
+ 	npe_initialize(bis);
+ #endif

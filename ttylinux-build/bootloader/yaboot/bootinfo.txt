@@ -1,0 +1,5 @@
+<chrp-boot>
+<description>ttylinux ppc</description>
+<os-name>ttylinux ppc</os-name>
+<boot-script>boot &device;:\boot\yaboot</boot-script>
+</chrp-boot>

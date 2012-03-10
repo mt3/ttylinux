@@ -1,0 +1,10 @@
+# vim: syntax=conf
+usr/share/terminfo/a/ansi
+usr/share/terminfo/l/linux
+usr/share/terminfo/r/rxvt
+usr/share/terminfo/v/versaterm
+usr/share/terminfo/v/vt100
+usr/share/terminfo/v/vt200
+usr/share/terminfo/v/vt320
+usr/share/terminfo/x/xterm
+usr/share/terminfo/x/xterm-color

@@ -1,0 +1,394 @@
+How to Build ttylinux
+Copyright (C) 2008-2012 Douglas Jerome <douglas@ttylinux.org>
+
+Some sections of this document are derived from ttylinux-src-7.0/REAME written
+by Pascal Schmidt; some text copyright (C) Pascal Schmidt.
+
+
+How_To_Build_ttylinux.txt
+March 4, 2012
+
+
+04mar12	drj	Changed for new build process.
+22apr11	drj	Changed "make iso" to "make boot".
+22apr11	drj	Tried to make some things more clear.
+20feb11	drj	Updated for change to xbuildtool, replaces cross-tools.
+25dec10	drj	Updated for latest cross-tools.
+13nov10	drj	Changed "ttylinux.dist-config.sh" to "ttylinux-config.sh".
+03aug10	drj	Changed "make bootcd" to "make iso".
+11mar10	drj	Fixups for clarity and the 9.2/10.0 release.
+07sep09	drj	Final fixups for 9.0 release.
+22aug09	drj	Fixups for clarity (I hope) and x86_64.
+22dec08	drj	RCS timestamp check.
+09dec08	drj	Small fixups.
+28nov08	drj	Corrected some of the Bug Reports and Help text.
+25nov08	drj	Added license, requirements and help information.
+23nov08	drj	Finished and baselined first version for ttylinux.
+
+
+                ------------------------------------------------
+
+
+How to Build ttylinux
+
+-- Document Outline --
+1. Introduction
+2. Licenses
+3. Building Requirements
+4. Build a Cross-compiling Tool Chain
+5. Build ttylinux
+   5.1. Selecting the Platform Configuration
+   5.2. Downloading Source Packages
+   5.3. Running the Make Command
+   5.4. Build an Individual Package
+   5.5. Continuing or Resuming Build of Packages
+6. Build Results
+7. Bug Reports and Help
+
+
+===============
+1. Introduction
+===============
+
+In the following descriptions there are example commands; they are prefixed by
+a shell prompt of "$ ", and comments to shell commands begin with the shell
+comment character '#".
+
+
+===========
+2. Licenses
+===========
+
+The ttylinux xbuildtool:
+- guide document is licensed under the FSF FDL1
+- make system is licensed under the FSF GPL2
+- components are GNU and Linux kernel projects licensed under FSF GPL
+  versions 2 or 3.
+
+The ttylinux make system, documents, and the base file system package are all
+licensed under the GNU General Public License (GPL), a copy of which you can
+find in the file doc/COPYING.
+
+The component source packages, in the pkg-src/ directory, are licensed under a
+number of different licenses.  The License section of the User Guide,
+doc/User_Guide.html, has an overview of the packages' licenses.  For more
+details, refer to the source packages.
+
+
+========================
+3. Building Requirements
+========================
+
+To build ttylinux you need the build system, which contains this file so you
+must already have it, and the individual source packages that need to be stored
+in the pkg-src/ directory.
+
+A tarball of the build system can be downloaded from the ttylinux homepage,
+which currently is located at the following URLs.
+
+     http://ttylinux.net/
+     http://ttylinux.org/
+
+The build process creates device nodes, sets ownership and privileges for
+root-owned files and mounts loopback file system images; therefore, you need to
+be root, uid 0 and guid 0, to run the build process.
+
+You will need at least 750 MB of free disk space to complete the build; the
+first build process includes building a cross-compiler tool chain with a full
+cross-building Binutils, GCC and GLIBC.  Subsequent ttylinux builds use an
+xbuildtool cross-compiling tool chain and require about 400 MB.
+
+On a 2.1 Ghz dual Athlon MP 2800 with 1.5 GB of RAM:
+i486 xbuildtool chain build ...... 54:55.47 elapsed time, 147% CPU utilization
+x86_64 xbuildtool chain build .... 56:38.42 elapsed time, 149% CPU utilization
+i486 ttylinux build .............. 34:13.02 elapsed time, 105% CPU utilization
+x86_64 ttylinux build ............ 33:47.21 elapsed time, 109% CPU utilization
+
+On ThinkPad W500 with Core(tm)2 Duo P8600 at 2.4 Ghz with 2.0 GB of RAM:
+i486 xbuildtool chain build ...... 25:59.91 elapsed time, 155% CPU utilization
+x86_64 xbuildtool chain build .... 27:14.13 elapsed time, 156% CPU utilization
+i486 ttylinux build .............. 17:44.04 elapsed time, 108% CPU utilization
+x86_64 ttylinux build ............ 18:17.83 elapsed time, 107% CPU utilization
+
+Software Requirements
+---------------------
+
+ttylinux is actively developed on a custom Linux distribution; there is not an
+officially supported Linux distribution used for ttylinux development.
+
+xbuildtool digression:
+     xbuildtool is a ttylinux project; it is used to build at least one cross-
+     compiling tool chain, and a cross tool chain is used to build ttylinux.  A
+     cross-compiling tool chain, a set of tools consisting of Binutils, GCC and
+     GLIBC with Linux kernel header files all targeting a Linux different from
+     the host system's Linux, is built first, then the cross-compiling tool
+     chain is used to build ttylinux.  The goal is that a cross-compiling tool
+     chain can be built on almost any recent version of Linux, and that enables
+     the building of a single configuration of ttylinux from almost any Linux
+     host.  For example: The i486 target cross-compiling tool chain can be
+     built on almost any recent Linux system, and each one of those i486 target
+     cross-compiling tool chains may be different as each is appropriately
+     built for the differing host systems running on various different Linux
+     systems; although, each cross-compiling tool chain is the same version of
+     Binutls+GCC+GLIBC and they all cross-build the same i486 code resulting in
+     a common i486 ttylinux.
+
+The following are the software development tools and their versions that are
+used to develop and maintain the ttylinux cross-compiling tool chains and
+ttylinux.  Roughly the same versions installed on a typical Linux distribution
+ought to work.
+
+     Tool                   Notes
+     ----------------       -------
+     autoconf-2.63
+     automake-1.11
+     bash-3.2
+     binutils-2.18
+     bison-2.3
+     bzip2-1.0.5
+     coreutils-6.12
+     diffutils-2.8.1
+     dev86-0.16.17 ........ for lilo
+     findutils-4.4.0
+     flex-2.5.35
+     gawk-3.1.6
+     gcc-4.3.2
+     gettext-0.17
+     glibc-2.9 ............ version probably doesn't much matter
+     grep-2.5.1
+     gzip-1.3.12
+     libtool-1.5.26
+     m4-1.4.11
+     make-3.81
+     ncurses-5.6
+     patch-2.6
+     perl-5.10 ............ probably not used
+     sed-4.1.5
+     tar-1.20
+     texinfo-4.12
+
+
+=====================================
+4. Build a Cross-compiling Tool Chain
+=====================================
+
+Note you do NOT need to be root.
+
+ttylinux uses a cross-compiler tool set that needs to be setup.  The setup
+downloads the source packages for Binutils, GCC, and Linux, then compiles these
+with your system's compiler to create the cross-building tool chain.
+
+xbuildtool is outside the ttylinux directory.  xbuildtool can build multiple
+different cross-compiling tool chains; these cross-compiling tool chains may
+have different versions of Binutils, GCC, GLIBC and Linux kernel header files.
+
+xbuildtool is setup to make standard cross-compiling tool chains for ttylinux;
+go to the xbuildtool-x.x directory and type "make help" to find out how to
+make a cross-compiling tool chains for ttylinux.
+
+The "make setup" command prepares xbuildtool for building tool chains.  The
+process of making a tool chain begins by downloading the needed source code
+packages; over 100 MB will be downloaded, be patient.
+
+Read the file xbuildtool-x.x/config/xbt-build-config.sh to learn how to make
+your own custom cross-compiling tool chain.
+
+=================
+5. Build ttylinux
+=================
+
+You need to be root, uid and gid both need to be 0.
+
+-----------------------------------------
+5.1. Selecting the Platform Configuration
+-----------------------------------------
+
+The ttylinux build system: it builds ttylinux for a given platform
+configuration; the platform is the hardrware system, such as an i686 PC or
+Macintosh G4, etc.
+
+Before building, you select the platform configuration with this command:
+
+     $ make getcfg
+
+You will be given a list of platform configurations; select one by typing the
+number in the list and then the Enter key.
+
+You can change the current platform configuration by editing the new
+ttylinux-config.sh file that is created by the "make getcfg" command.
+
+--------------------------------
+5.2. Downloading Source Packages
+--------------------------------
+
+In the ttylinux directory, give this command to download source packages:
+
+     $ make dload
+
+You may already have all the needed source packages.  Copy any source packages
+to ~/Download and the "make dload" command will get them from there, as a local
+cache.
+
+Different ttylinux targets have different components, so you need to run
+"make dload" at least once for each different ttylinux target you want to
+build.
+
+-----------------------------
+5.3. Running the Make Command
+-----------------------------
+
+In the ttylinux directory, try "make help".
+
+Now give this make command:
+
+     $ make dist
+
+or try these:
+
+     $ make clean
+     $ make init
+     $ make pkgs
+     $ make fsys
+     $ make kernel
+     $ make distdir
+     $ make distimg
+
+NOTE About True Cross-building With xbuildtools
+     GLIBC is built with, and is a part of, the cross-compiling tool chains
+     built with xbuildtool; it is configure with something like
+     "--enable-kernel=2.6.0" and built against the Linux kernel headers files
+     used by the cross tool chain.  All other ttylinux packages are cross-built
+     against this GLIBC and its Linux kernel header files.  Please, don't use a
+     custom Linux kernel with ttylinux that is older than the cross tool Linux
+     kernel headers, or your nose will fall off and you'll get a bunch of
+     pimples.
+
+--------------------------------
+5.4. Build an Individual Package
+--------------------------------
+
+An individual package, whether it is in the package list or not, can be built;
+the following example builds the bash package.
+
+     $ make PACKAGE=bash-4.1 bash-4.1
+
+This command can be performed anytime after "make init"; any previous build of
+the package is overwritten.  This is handy when developing and modifying
+individual packages, particularly those that are not in the package list.
+
+---------------------------------------------
+5.5. Continuing or Resuming Build of Packages
+---------------------------------------------
+
+If a package fails to build and you fix the problem, you can continue building
+the packages starting with the last failed package build; use this command:
+
+     $ make pkgs_
+
+You can test this command by interrupting the package build process with CTRL-C
+and then giving the "make pkgs_" command.
+
+================
+6. Build Results
+================
+
+Packages
+--------
+
+Package build results are in the pkg-bin/ directory.  All packages in this
+directory are put into the ttylinux file system and bootable image.
+
+Images
+------
+
+The build results are in the img directory; there are a file system image and
+a boot CD-ROM ISO image.
+
+sysroot
+-------
+
+There is a sysroot directory containing the entire incremental build; the
+ttylinux packages are constructed by taking some of the files from the sysroot.
+Usually most files are used, but in the case of GLIBC there are many files not
+used in the ttylinux package: the internationalization, i18n, and localization,
+l10n, files.
+
+The build can be interactively evaluated by executing the following command if
+the ttylinux build is of the same architecture as the build host e.g., you are 
+building ttylinux on a typical 32-bit or multilib x86 Linux system and build
+the i486 ttylinux:
+
+     $ . ttylinux-chroot.sh
+
+The above command sets your top-level root directory to be the ttylinunx
+sysroot, so you are still running your build system's kernel but using the
+ttylinux build as the root directory.
+
+The sysroot directory can be used as an NFS root.  If you NFS export the
+sysroot directory, you can start ttylinux with a boot line something like:
+
+     ttylinux nofsck nofirewall \
+              root=nfs \
+              nfsroot=X.Y.Z.P1:/<path> \
+              ip=X.Y.Z.P2
+
+Bootable CD-ROM
+----------------
+
+You can burn the boot CD-ROM ISO image to a CD-ROM and boot it; try this
+command:
+
+     $ make media
+
+Bootable USB Drive
+------------------
+
+The build/cdrom directory contains the CD-ROM mastering image source files,
+include Linux kernel and file system image.  There is a shell script that can
+be used to make USB disk bootable with ttylinux.  The shell script is in the
+sysroot/sbin/ directory; it is "ttylinux-flash".  This shell script is in the
+ttylinux file system, so ttylinux itself is capable of making a USB disk
+bootable with ttylinux.  Either lilo or syslinux can be used as the boot loader
+on the USB disk; the script options used to indicate lilo and syslinux are
+"-l", "--lilo", "-s" and "--syslinux".
+
+Example:
+
+     On your host system, if you have a USB disk mounted at /mnt/flash on device
+     /dev/sda1, then try one of the following command.
+
+     $ sysroot/sbin/ttylinux-flash --lilo build/cdrom /mnt/flash /dev/sda
+     $ sysroot/sbin/ttylinux-flash -s build/cdrom /mnt/flash /dev/sda
+
+Example:
+
+     From a CD-ROM-booted ttylinux system, if you have a USB disk mounted at
+     /mnt/flash on device /dev/sda1 and the CD-ROM mounted on /mnt/cdrom, then
+     try one of the following command.
+
+     $ ttylinux-flash -l /mnt/cdrom /mnt/flash /dev/sda
+     $ ttylinux-flash --syslinux /mnt/cdrom /mnt/flash /dev/sda
+
+
+=======================
+7. Bug Reports and Help
+=======================
+
+It is a goal to support building ttylinux on any normal Linux x86 distribution.
+Reporting bugs in xbuildtool, ttylinux and their documents is appreciated.
+
+     Douglas Jerome <douglas@ttylinux.org>
+
+There is a web-based forum that is active from time to time; it is active on
+date this was written, 2010-03-11, and is intended to be active as long as
+minimalinux is supporting ttylinux, barring spammer abuse.
+
+     http://www.minimalinux.org/forum/
+
+Help may be available on irc, which is very low bandwith and seemingly more
+appropriate for inane banter that sometimes is fun.
+
+   irc.freenode.net #ttylinux
+
+
+[eof]

@@ -1,0 +1,11 @@
+--- busybox-1.19.3/include/platform.h   2011-10-29 04:43:01.000000000 -0700
++++ busybox-1.19.3-new/include/platform.h       2012-01-14 18:11:51.000000000 -0700
+@@ -366,7 +366,7 @@
+ #if defined(__UCLIBC_MAJOR__)
+ # if __UCLIBC_MAJOR__ == 0 \
+   && (   __UCLIBC_MINOR__ < 9 \
+-     || (__UCLIBC_MINOR__ == 9 && __UCLIBC_SUBLEVEL__ < 31) \
++     || (__UCLIBC_MINOR__ == 9 && __UCLIBC_SUBLEVEL__ < 32) \
+      )
+ #  undef HAVE_STRVERSCMP
+ # endif

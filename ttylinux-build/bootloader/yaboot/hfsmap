@@ -1,0 +1,8 @@
+# EXTIN    XLate  CREATOR  TYPE    Comment
+.b         Raw    'UNIX'   'tbxi'  "bootstrap"
+.conf      Raw    'UNIX'   'conf'  "bootstrap"
+.msg       Ascii  '????'   '????'  "Text Message"
+filesys.gz Raw    'ddsk'   'DDim'  "root_image"
+vmlinux    Raw    'UNIX'   'boot'  "bootstrap"
+yaboot     Raw    'UNIX'   'boot'  "bootstrap"
+*          Raw    'UNIX'   'UNIX'  "unix"

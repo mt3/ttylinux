@@ -1,0 +1,84 @@
+# vim: syntax=cfg
+
+#
+# pc_i486 - small system with glibc-2.9 and linux-2.6.34.6
+# Wed Feb 22 20:11:21 MST 2012
+#
+
+TTYLINUX_NAME=
+TTYLINUX_VERSION=
+
+#
+# Platform, cross-tool, and CFLAGS.  Be carefull with changes.
+#
+TTYLINUX_PLATFORM=pc_x86_64
+TTYLINUX_XBT_DIR="../cross-tools-2.13-2.6.38.1"
+TTYLINUX_XBT="x86_64-generic-linux-gnu"
+TTYLINUX_CFLAGS="-m64 -Os"
+
+#
+# Build process options and distribution attributes.
+#
+TTYLINUX_RAMDISK_SIZE=64
+TTYLINUX_STRIP_BINS=y
+# TTYLINUX_USER_KERNEL is not set
+TTYLINUX_SITE_SCRIPTS=y
+
+#
+# Bootloader Set-up
+#
+TTYLINUX_ISOLINUX=y
+TTYLINUX_ISOLINUX_VERSION=4.05
+# TTYLINUX_ISOLINUX_PATCH is not set
+# TTYLINUX_ISOLINUX_TARGET is not set
+# TTYLINUX_UBOOT is not set
+# TTYLINUX_UBOOT_VERSION is not set
+# TTYLINUX_UBOOT_PATCH is not set
+# TTYLINUX_UBOOT_TARGET is not set
+
+#
+# Packages Options
+#
+# TTYLINUX_PACKAGE_BUSYBOX_HAS_LOSETUP is not set
+TTYLINUX_PACKAGE_GCC_GMP_VER=4.3.2
+TTYLINUX_PACKAGE_GCC_MPFR_VER=2.4.2
+# TTYLINUX_PACKAGE_GCC_MPC_VER is not set
+TTYLINUX_PACKAGE_NCURSES_HAS_LIBS=y
+
+#
+# Packages - Order is important; these will be built in the order listed below.
+#
+declare -i i=0
+TTYLINUX_PACKAGE[i++]="ttylinux-basefs-1.0"
+# TTYLINUX_PACKAGE[i++]="ttylinux-devfs-1.0"
+# TTYLINUX_PACKAGE[i++]="glibc-2.9"
+TTYLINUX_PACKAGE[i++]="glibc-2.13"
+TTYLINUX_PACKAGE[i++]="glibc-devel-2.13"
+# TTYLINUX_PACKAGE[i++]="uClibc-0.9.32"
+TTYLINUX_PACKAGE[i++]="ncurses-5.7"
+TTYLINUX_PACKAGE[i++]="gmp-4.3.2"
+TTYLINUX_PACKAGE[i++]="mpfr-2.4.2"
+TTYLINUX_PACKAGE[i++]="alsa-lib-1.0.25"
+TTYLINUX_PACKAGE[i++]="bash-4.2"
+TTYLINUX_PACKAGE[i++]="busybox-1.19.3"
+TTYLINUX_PACKAGE[i++]="e2fsprogs-1.42"
+TTYLINUX_PACKAGE[i++]="iptables-1.4.12"
+TTYLINUX_PACKAGE[i++]="lilo-23.2"
+TTYLINUX_PACKAGE[i++]="module-init-tools-3.16"
+TTYLINUX_PACKAGE[i++]="ntfs-3g_ntfsprogs-2012.1.15"
+TTYLINUX_PACKAGE[i++]="ttylinux-utils-1.3"
+TTYLINUX_PACKAGE[i++]="udev-163"
+TTYLINUX_PACKAGE[i++]="util-linux-ng-2.18"
+# TTYLINUX_PACKAGE[i++]="yaboot-1.3.13"
+TTYLINUX_PACKAGE[i++]="binutils-2.22"
+TTYLINUX_PACKAGE[i++]="gcc-4.4.6"
+TTYLINUX_PACKAGE[i++]="make-3.82"
+TTYLINUX_PACKAGE[i++]="dropbear-0.53.1"
+TTYLINUX_PACKAGE[i++]="gpm-1.20.6"
+TTYLINUX_PACKAGE[i++]="ppp-2.4.5"
+TTYLINUX_PACKAGE[i++]="thttpd-2.25b"
+TTYLINUX_PACKAGE[i++]="alsa-utils-1.0.25"
+TTYLINUX_PACKAGE[i++]="retawq-0.2.6c"
+TTYLINUX_PACKAGE[i++]="calc-2.12.4.4"
+
+# end of file

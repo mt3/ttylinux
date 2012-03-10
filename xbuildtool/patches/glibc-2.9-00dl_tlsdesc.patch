@@ -1,0 +1,13 @@
+diff -Naur glibc-2.9-old/sysdeps/i386/dl-tlsdesc.S glibc-2.9-new/sysdeps/i386/dl-tlsdesc.S
+--- glibc-2.9-old/sysdeps/i386/dl-tlsdesc.S   2008-05-13 07:33:06.000000000 +0200
++++ glibc-2.9-new/sysdeps/i386/dl-tlsdesc.S   2009-05-01 22:42:39.000000000 +0200
+@@ -128,8 +128,7 @@
+ .Lslow:
+ 	cfi_adjust_cfa_offset (28)
+ 	movl	%ebx, 16(%esp)
+-	call	__i686.get_pc_thunk.bx
+-	addl	$_GLOBAL_OFFSET_TABLE_, %ebx
++	LOAD_PIC_REG(bx)
+ 	call	___tls_get_addr@PLT
+ 	movl	16(%esp), %ebx
+ 	jmp	.Lret

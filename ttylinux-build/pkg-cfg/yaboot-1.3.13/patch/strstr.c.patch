@@ -1,0 +1,24 @@
+--- yaboot-1.3.13/lib/strstr.c		2001-09-20 06:15:31.000000000 -0700
++++ yaboot-1.3.13-new/lib/strstr.c	2010-03-27 09:42:25.000000000 -0700
+@@ -26,6 +26,10 @@
+  *
+  * Stephen R. van den Berg, berg@pool.informatik.rwth-aachen.de	*/
+ 
++/*
++ 2010-03-27	drj	Changed for standard C compliance.
++ */
++
+ #include <string.h>
+ 
+ typedef unsigned chartype;
+@@ -76,7 +80,9 @@
+ 	      a = *++haystack;
+ 	      if (a == '\0')
+ 		goto ret0;
+-shloop:	    }
++shloop:
++	NULL;
++	    }
+           while (a != b);
+ 
+ jin:	  a = *++haystack;

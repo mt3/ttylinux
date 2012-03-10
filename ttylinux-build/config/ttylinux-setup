@@ -1,0 +1,68 @@
+#!/bin/bash
+# ttylinux (setup)
+
+# Parameters
+#
+#      $1  This is the booted flash disk block device that is mounted at
+#          /mnt/flash, it is something like "/dev/sdb1".
+
+# *****************************************************************************
+# setup ttylinux
+# *****************************************************************************
+
+# Scribble on a different vt.
+#
+openvt -c 8 -s true
+exec 0<> /dev/tty8 1>&0 2>&0
+echo "***** Switched to Virtual Terminal 8 (tty8) *****"
+
+# Setup New User Accounts
+#
+echo ""
+echo "Setting up user accounts."
+adduser -D -G root -h /home/admin -g "ttylinux admin" -s /bin/bash admin
+exec 0<> /dev/tty8 1>&0 2>&0
+echo "   * admin"
+adduser -D         -h /home/guest -g "ttylinux guest" -s /bin/bash guest
+exec 0<> /dev/tty8 1>&0 2>&0
+echo "   * guest"
+echo "   => Setting user \"admin\" password to the root password."
+echo "   => Setting user \"guest\" to have no password."
+chmod 600 /etc/shadow
+encryptedPassword=$(grep root /etc/shadow | sed -e "s/root:\([^:]*\):.*/\1/")
+sed -e "s/admin:!/admin:${encryptedPassword}/" -i /etc/shadow
+sed -e "s/guest:!/guest:/" -i /etc/shadow
+unset encryptedPassword
+chmod 400 /etc/shadow
+
+# Setup eth0 Ethernet Networking
+#
+echo ""
+echo "Setting up eth0 Ethernet network with DHCP."
+sysconfig --netconfig ifcfg-eth0.ENABLE=yes
+sysconfig --netconfig ifcfg-eth0.DHCP=yes
+# sysconfig --netconfig ifcfg-eth0.DHCP=no
+# sysconfig --netconfig ifcfg-eth0.IPADDRESS=192.168.1.20
+# sysconfig --netconfig ifcfg-eth0.NETWORK=192.168.1.0
+# sysconfig --netconfig ifcfg-eth0.NETMASK=255.255.255.0
+# sysconfig --netconfig ifcfg-eth0.GATEWAY=192.168.1.1
+# sysconfig --netconfig ifcfg-eth0.BROADCAST=192.168.1.255
+service network restart
+
+# Go back to the boot vt.
+#
+echo ""
+echo "**** Switching back to Virtual Terminal 1 (tty1) *****"
+sleep 3
+chvt 1
+exec 0<> /dev/console 1>&0 2>&0
+
+# *****************************************************************************
+# exit setup
+# *****************************************************************************
+
+# Uncomment the "exit 2" to leave the booted flash disk mounted at /mnt/flash.
+#
+# exit 2
+
+exit 0

@@ -1,0 +1,26 @@
+How to use Debian Lenny for compilling ttylinux:
+
+- Install Debian 5.0.7 from the netinstall.iso, choose only the base packages,
+  not the desktop packages etc.
+- touch /etc/apt/apt.conf
+- vi /etc/apt/apt.conf
+
+     APT::Install-Recommends "0";
+     APT::Install-Suggests "0";
+
+- apt-get clean all
+- apt-get update
+- apt-get upgrade
+- apt-get install build-essential autoconf automake bzip2 mkisofs bin86 gawk \
+          flex bison ncurses-dev docbook-utils
+
+***** This paragraph is out-of-date [djerome 2012-03-09]:
+***** docbook-utils, from my point of view, adds too many additional packages,
+***** see this post for how you can compile ttylinux without docbook2man:
+***** http://minimalinux.org/forum/viewtopic.php?id=462
+
+I hope this short how to is useful for you!
+Happy ttylinux developing/compiling :-)
+
+best regards,
+Schwan

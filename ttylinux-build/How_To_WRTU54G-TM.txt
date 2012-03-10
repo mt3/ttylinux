@@ -1,0 +1,238 @@
+How_To_WRTU54G-TM.txt
+How to Build and Run ttylinux for the WRTU54G-TM
+
+Parts of this document are shamelessly nicked from neutronscott:
+http://wiki.scottn.us/wrtu54g-tm
+
+
+         -------------------------------------------------------------
+
+
+                               Table of Contents
+
+1. Background on the WRTU54G-TM CPU, ADM8668 Wildpass
+2. WRTU54G-TM Memory Information
+2.1. RAM Organization
+2.2. Flash Organization
+3. Accessing the WRTU54G-TM Hardrware
+3.1. Serial Port
+3.2. Ethernet Port
+4. Loading and Booting ttylinux
+4.1. Building ttylinux for the WRTU54G-TM
+4.2. kernel, nfsroot from network
+4.3. kernel, ramdisk from network
+4.4. kernel+ramdisk, as one file, from network
+5. Running ttylinux
+5.1. Problems
+5.2. /proc/adm8668/buttons and /proc/adm8668/sesled
+
+
+         -------------------------------------------------------------
+
+
+   ==================================================
+1. Background on the WRTU54G-TM CPU, ADM8668 Wildpass
+   ==================================================
+
+WildPass is a highly integrated SoC which incorporates a 200MHZ CPU with MMU
+support, a 802.11a/b/g MAC/Baseband, two 802.3 MACs and one 10/100BASE-Tx
+802.3u compliant Auto-MDIX transceiver.  A hardware NAT for high speed
+broadband applications is supported and it has multiple interfaces including a
+USB2.0, PCI 2.3, IDE , SPI and PCM.
+
+=> CPU: 200MHZ MIPS4KC with 8KB I-cache, 8KB D-Cache with MMU support, 6 DMA
+        engines, Hardware NAT support
+=> WLAN (1 802.11a/b/g WMAC + BBP)
+=> USB 2.0 Host + PHY interface
+=> PCI bridge that can support 3 PCI devices
+=> IDE, PCM UART and SPI interfaces
+=> IEEE 802.11a/b/g, IEEE 803.11e(WMM), 802.11i(WPA2), 802.11h, IEEE 802.11d
+   and 802.11d Standards compliant
+=> AHB devices: MIPS4KC, MC, port1, port2,
+=> WLAN, USB2.0 host, PCI, IDE.
+=> Debugging interface: JTAG for MIPS-multiICE, trace32
+=> Package: 352BGA and 289BGA (excludes PCI and IDE interface)
+
+This chip has reached end of life.  You will not find much support for such a
+dated chip.
+
+Find more WRTU54G-TM information, including an OpenWRT port, at
+http://wiki.scottn.us/wrtu54g-tm
+
+
+   =============================
+2. WRTU54G-TM Memory Information
+   =============================
+
+64MB RAM
+8MB Flash
+
+2.1. RAM Organization
+     ----------------
+
+0xa4000000 - 64MB
+0xa0000000 - 0
+
+0x84000000 - 64MB
+0x80000000 - 0
+
+0x04000000 - 64MB
+0x00000000 - 0
+
+2.2. Flash Organization
+     ------------------
+
+flash is at 0xb0000000
+
+Flash Memory Factory Layout
+0xb0000000-0xb000306f [12.1KB] U-Boot loader - Micro-Bunzip2
+0xb0003070-0xb000ffff [51.9KB] BZip2 compressed U-Boot image (32-byte header)
+0xb0010000-0xb001ffff [ 6.4KB] Unused - all <FF> bytes
+0xb0020000-0xb0020fff [ 3.9KB] NVRAM default values (4-byte header, u-boot env)
+0xb0021000-0xb003ffff [ 124KB] RAW ACS filesystem /nv/*
+0xb0040000-0xb01fffff [1.79MB] GZip compressed Linux kernel #1 (32-byte header)
+0xb0200000-0xb059dfff [3.70MB] SquashFS filesystem #1
+0xb059e000-0xb05f0fff [3.32MB] unused FF
+0xb05f1000-0xb05fffff [59.9KB] RAW ACS filesystem /tmp/crt.pem
+0xb0600000-0xb06affff [ 704KB] GZip compressed Linux kernel #2 (32-byte header)
+0xb06b0000-0xb07d3fff [1.17MB] SquashFS filesystem #2
+0xb07d4000-0xb07fffff [ 176KB] unused FF
+
+
+   ==================================
+3. Accessing the WRTU54G-TM Hardrware
+   ==================================
+
+3.1. Serial Port
+     -----------
+
+You must open the box and connect the serial port to serial terminal or
+computer running a serial terminal emulator like minicomm.
+
+The WRTU54G-TM serial port connector is JP2; it is a standard Linksys 3.3 VDC
+serial port, used with 115200 8N1.  Use a RS-232 level converter or serial
+converter that uses 3.3 VDC.  Both the Nokia CA-42 seems to work OK.  I use an
+Acroname serial interface connector S13-SERIAL-INT-CONN with extension cable
+C10-SER-INT-CONN-EXT and it works after cutting and switching some of the
+extention cable wires.
+
+triangle/arrow above is 3.3 VDC.
+JP2 pinout: (triangle/arrow->) 1 - 3.3 VDC
+                               2 - TXD
+                               3 - RXD
+                               4 - GND
+
+If you are using the S13-SERIAL-INT-CONN device, this is how to change the
+connections by cut and switch wires in the C10-SER-INT-CONN-EXT:
+
+JP2 pinout        C10-SER-INT-CONN-EXT       S13-SERIAL-INT-CONN device
+----------        --------------------       -------------------------
+1 - 3.3 VDC ... yellow ---------- red ...... 3.3 VDC
+2 - TXD ....... red ------------- green .... TXD
+3 - RXD ....... green ----------- yellow ... RXD
+4 - GND ....... black ----------- black .... GND
+
+
+3.2. Ethernet Port
+     -------------
+
+Connect the WRTU54G-TM uplink Ethernet port (look for the blue-shading around
+RJ-45 connecter labeled "INTERNET") to a network with a host computer running a
+tftp server, and have the ttylinux kernel and ramdisk available from that host
+computer via tftp.
+
+
+   ============================
+4. Loading and Booting ttylinux
+   ============================
+
+4.1. Building ttylinux for the WRTU54G-TM
+     ------------------------------------
+
+4.1.1. ttylinux versions *previous* to ttylinux-build-10
+
+Edit ttylinux-config.sh to specify the "em-wrtu54g_tm-mipsel" ttylinux target,
+and then run the make process with this command:
+
+     $ make dist
+
+4.1.2. ttylinux versions ttylinux-build-10 and later
+
+     $ make getcfg  # Select the number for "wrtu54g_tm_defconfig".
+     $ make dist
+
+The following sections show WRTU54G-TM u-boot commands to give via the serial
+port for loading and running WRTU54G-TM ttylinux.
+
+4.2. kernel, nfsroot from network
+     ----------------------------
+
+Note to self: My Fedora host's tftpd gets and puts files from and to
+              /var/lib/tftpboot/, so that is where you want to put the build
+              output uImage.
+
+NOTE background information on kernel parameters for nfsroot:
+     ip=<client-ip>:<server-ip>:<gw-ip>:<netmask>:<hostname>:<device>:<autoconf>
+
+ADM8668 # set ipaddr 192.168.0.30
+ADM8668 # set serverip 192.168.0.5
+ADM8668 # set bootargs console=ttyS0 nologin=tty1,tty2,tty3,tty4,tty5,tty6 nofsck root=nfs nfsroot=192.168.1.3:/home/djerome/projects/ttylinux-build-10/sysroot ip=192.168.1.30:192.168.1.3::::eth1
+ADM8668 # tftpboot 80600000 uImage
+ADM8668 # bootm 80600000
+
+4.3. kernel, ramdisk from network
+     ----------------------------
+
+Note to self: My Fedora host's tftpd gets and puts files from and to
+              /var/lib/tftpboot/, so that is where you want to put the build
+              outputs uImage and ramdisk.gz.  Notice the ramdisk is 5 MB and
+              that basically is the numbe of bytes from the beginning of the
+              ramdisk address, 803FFFC0, to the kernel address, 80900000.
+
+ADM8668 # set ipaddr 192.168.0.30
+ADM8668 # set serverip 192.168.0.5
+ADM8668 # set bootargs console=ttyS0 nologin=tty1,tty2,tty3,tty4,tty5,tty6 enet root=/dev/ram0 ramdisk_size=5120 host=yuki.ttylinux.net
+ADM8668 # tftpboot 80900000 uImage
+ADM8668 # tftpboot 803FFFC0 ramdisk.gz
+ADM8668 # bootm 80900000 803FFFC0
+
+4.4. kernel+ramdisk, as one file, from network
+     -----------------------------------------
+
+Note to self: My Fedora host's tftpd gets and puts files from and to
+              /var/lib/tftpboot/, so that is where you want to put the build
+              output vmlinux-ramdisk.bin.
+
+NOTE The file "vmlinux-ramdisk.bin" probably can be written to flash starting
+     at 0xb0040000, BUT YOU WILL LOSE THE FACTORY KERNEL.  Erase the section
+     of flash from 0xb0040000 to 0xb05f0fff, then write "vmlinux-ramdisk.bin"
+     using tftpboot, after which the box should automatically boot it.
+
+ADM8668 # set ipaddr 192.168.0.30
+ADM8668 # set serverip 192.168.0.5
+ADM8668 # set bootargs console=ttyS0 nologin=tty1,tty2,tty3,tty4,tty5,tty6 enet root=/dev/ram0 ramdisk_size=5120 host=yuki.ttylinux.net
+ADM8668 # tftpboot 80900000 vmlinux-ramdisk.bin
+ADM8668 # bootm 80900000
+
+
+   ================
+5. Running ttylinux
+   ================
+
+5.1. Problems
+     --------
+
+Cannot log in via ssh.
+
+5.2. /proc/adm8668/buttons and /proc/adm8668/sesled
+     ----------------------------------------------
+
+To sense the top "key" button: "cat /proc/adm8668/buttons" while pushing,
+holding, releasing, and not holding the top "key" button.
+
+To control internal LED:
+cat /proc/adm8668/sesled
+echo 0 >>/proc/adm8668/sesled  turn off
+echo 1 >>/proc/adm8668/sesled  turn green led on
+echo 2 >>/proc/adm8668/sesled  turn amber led on
+

@@ -1,0 +1,714 @@
+Current  Maintainer: (2008-    ) Douglas Jerome <douglas@ttylinux.org>
+Previous Maintainer: (2001-2008) Pascal Schmidt <ttylinux@ewetel.net>
+
+Version 10.0, Sat Mar  3 16:09:11 MST 2012
+ - switched to a grand unified version -- went backwards, how wierd is that
+ - distribution named "bazooka"
+ - added grub2 loopback.cfg in ISO
+ - Linux kernel: added network bonding device kernel module
+ - updated from alsa-lib-1.0.24 to alsa-lib-1.0.25
+
+Version 12.7, Sun Dec 25 11:56:03 MST 2011
+ - distribution named "buzzkill"
+ - updated from alsa-lib-1.0.23 to alsa-lib-1.0.24
+ - updated from binutils-2.20 to binutils-2.22
+ - updated from busybox-1.18.4 to busybox-1.19.3
+ - updated from dropbear-0.52 to dropbear-0.53.1
+ - updated from e2fsprogs-1.41.12 to e2fsprogs-1.42
+ - updated from glibc-2.12.1 to glibc-2.13
+ - updated from iptables-1.4.9.1 to iptables-1.4.12
+ - updated from lilo-23.1 to lilo-23.2
+ - updated from module-init-tools-3.12 to module-init-tools-3.16
+
+Version 12.6, ddd Apr 19 hh:mm:ss MST 2011
+ - distribution named "maiko"
+ - updated from linux-2.6.34.6 to linux-2.6.38.1
+ - updated from busybox-1.18.1 to busybox-1.18.4
+
+Version 12.5, Sat Feb 26 20:44:34 MST 2011
+ - distribution named "boomer"
+ - (busybox) dhcp client adds OpenDNS nameservers if dhcp server doesn't
+ - (pacman) fixed for empty repo and --vers= srting
+
+Version 12.4, Sun Feb 20 12:30:40 MST 2011
+ - distribution named "zoomer"
+ - build system: major re-oranization
+ - build system: ISO now has all ttylinux packages, separate from initrd
+ - increased file system size to 24 MB
+ - Linux kernel: added network devices
+ - Linux kernel: added PCMCIA and CardBus devices
+ - Linux kernel: added vesa, nvidia, radeon and matrox frame buffers
+ - fixed udev rules for making /dev/{cdrom,cdrw,dvd,dvdrw} sym links
+ - reverted to busybox for mount and umount, mainly for NFS mounting
+ - updated from busybox-1.17.4 to busybox-1.18.1
+ - updated from lilo-22.8 to lilo-23.1
+ - (bash) fixed job control; fg and bg commands now work
+ - (bash) dynamically linked to libncurses
+ - (busybox) added many programs
+ - (busybox) added "eject", to eject CD-ROM
+ - (gpm) switch from /dev/input/mouse0 to /dev/input/mice
+ - (iptables) added on/off FORWARD control
+ - (iptables) added /etc/sysconfig/firewall which has "FIREWALL=on"
+ - (ttylinux-installer) greatly reduced memory requirement for installation
+ - (ttylinux-installer) added lock-down capability in an installed system
+ - (ttylinux-installer) added target installation configuration file
+ - (udev) corrected and simplified udev rules -- thanks pablo <claws.wielder@gmail.com>
+
+Version 12.3, Sat Dec 25 20:18:31 MST 2010
+ - name changed from "meerkat" to "mana"
+ - added detail to the config/ directory organization
+ - changed the mechanism of using a specified kernel
+ - added prerun site-specific script callout to the make steps
+ - made easier use of cross-tools from a different location
+ - added ReiserFS, JFS and XFS
+ - added MMC/SD/SDIO card drivers to use SD card for disk drive
+ - added support for serial port console and login for "console=<ttyS*>"
+ - added "login=<ttyS*>[,<ttyS*>]" boot parameter to put login on serial devs
+ - added "nologin=<tty*>[,<tty*>]" boot parameter remove login from virt console
+ - added "modules=<module>[,<module>]" to load specific kernel module(s)
+ - updated from busybox-1.17.3 to busybox-1.17.4
+ - (busybox) removed kernel module handling programs
+ - (busybox) removed mount, umount, losetup
+ - (busybox) switched from more to less, added pgrep, pkill, top
+ - (iptables) added "ping" in firewall configuration file /etc/firewall.conf
+ - (udev) corrected to load modules that have bus aliases e.g., for sound cards
+ - new package: (gpm-1.20.6)
+ - new package: (module-init-tools-3.12) added insmod, lsmod, modprobe, rmmod
+ - new package: (util-linux-ng-2.18) added mount, umount, losetup
+
+Version 12.2, Tue Nov 23 17:58:52 MST 2010
+ - name changed from "atheling" to "meerkat"
+ - changed "ttylinux.dist-config.sh" to "ttylinux-config.sh"
+ - added "make bcfg-stnd" and "make bcfg-suid" to make busybox config files.
+ - increased file system size fro 8 MB to 10 MB for ncurses libs, kernel modules
+ - split /dev from basefs for platform-specific /dev content
+ - added vesa frame buffer
+ - added support for serial port console and login
+ - added support nfsroot
+ - added "nofireall" boot parameter
+ - enabled kernel modules
+ - added udev-163 to dynamically create /dev device nodes
+ - mount a /tmp partition if found in /etc/fstab at startup
+ - properly make /dev/root device node at startup
+ - updated from busybox-1.17.2 to busybox-1.17.3
+ - updated from ncurses-5.6 to ncurses-5.7
+ - (busybox) added locale support, more desktop compatibility
+ - (busybox) added mount by LABEL and UUID
+ - (ncurses) added ncurses libraries
+ - (iptables) added /etc/sysconfig/firewall
+
+Version 12.1, Sun Oct 17 18:02:17 MST 2010
+ - name changed from "backfire" to "atheling"
+ - fixed the setting of the initrd file system size
+ - added a package download to the makefile
+ - cross-tools: updated from gcc-4.3.4 to gcc-4.4.4
+ - Linux kernel: updated from 2.6.30.5 to 2.6.34.6
+ - updated from glibc-2.11 to glibc-2.12.1
+ - updated from bash-3.2.48 to bash-4.1
+ - updated from busybox-1.16.1 to busybox-1.17.2
+ - updated from e2fsprogs-1.41.10 to e2fsprogs-1.41.12
+ - updated from iptables-1.4.6 to iptables-1.4.9.1
+ - (e2fsprogs) added /sbin/tune2fs
+
+Version 11.2, Sat Jul 10 17:51:03 MST 2010
+ - name changed from "aardvark" to "backfire"
+ - fixed a makefile shell problem for some hosts
+ - fixed the ttylinux-flash script
+ - improved the pacman and ttylinux-installer scripts
+ - (busybox) removed rtcwake
+ - (bash) fixed a bash build problem for some hosts
+
+Version 11.1, Sat Apr 24 11:26:04 MST 2010
+ - name changed from "akira" to "aardvark"
+ - added vmlinux and System.map to the ISO image
+ - added a boot option to set the hostname
+ - added a user named "user" with password "password"
+ - updated from busybox-1.15.3 to busybox-1.16.1
+ - (busybox) added ftpget and ftpput
+ - (busybox) the udhcp script should set the hostname, if given
+ - fixed rc.sysinit to correctly mount nfs file systems in /etc/fstab
+ - added to ttylinux-installer script: user-check before installing boot loader
+ - added to pacman: the ability to make packages
+
+Version 11.0, Sat Mar 20 21:57:27 MST 2010
+ - distribution name changed from "dusty" to "akira"
+ - cross-tools: added i686 target which is SMP
+ - added a few boot options
+ - updated from busybox-1.14.3 to busybox-1.15.3
+ - updated from e2fsprogs-1.41.8 to e2fsprogs-1.41.10
+ - updated from iptables-1.4.4 to iptables-1.4.6
+ - fixed "shutdown" and let "halt", "reboot" and "poweroff" work right
+ - removed /etc/UTC and its localtime symlink
+ - added ttylinux version usage to pacman
+
+Version 9.1, Thu Dec 31 20:18:15 MST 2009
+ - distribution name changed from "rigel" to "dusty"
+ - Linux kernel: added USB HID support, primarily for USB keyboards
+ - added crond init script and empty config files
+ - made corrections to Flash_Disk_Howto.txt
+
+Version 9.0, Mon Sep  7 16:33:28 MST 2009
+ - distribution name changed from "osiris" to "rigel"
+ - cross-tools: added x86_64 target which is SMP
+ - cross-tools: streamlined the output of building a cross tool chain
+ - Linux kernel: updated from 2.6.20 to 2.6.30.5
+ - Linux kernel: added NFS vers 3
+ - build process: has cleaner output
+ - build process: boot cd iso is better organized
+ - updated from glibc-2.8 (20080929) to glibc-2.9
+ - updated from busybox-1.13.1 to busybox-1.14.3
+ - updated from dropbear-0.51 to dropbear-0.52
+ - updated from e2fsprogs-1.41.5 to e2fsprogs-1.41.8
+ - updated from iptables-1.4.2 to iptables-1.4.4
+ - (busybox) added crond and crontab {configuration is your job}
+ - (busybox) enabled power and exp functions to dc
+ - (busybox) removed telnet and telnetd
+ - (busybox) removed support of 2.0, 2.2 and 2.4 kernels
+ - (busybox) bunch of other reductions to busybox
+ - (busybox) fixed klogd logging level
+ - pacman can install packages from respository via http
+ - added a proper shutdown script: use "shutdown -r" or "shutdown -h"
+ - separated firewall configuration from network ISP configurations
+ - removed dialup networking until...
+ - added an ftp server
+ - setup active ftp and tftp servers via inetd
+ - system init scripts make less chatter and give prettier output
+ - added /sbin/ttylinux-flash to make ttylinux boot flash disks, USB drives.
+ - when booting from flash, ttylinux looks on flash for user script at startup
+
+Version 8.1, Wed May 27 17:25:34 MST 2009
+ - distribution name changed from "umami" to "osiris"
+ - cross-tools: split downloading from setup
+ - cross-tools: building a cross-tool chain is a bit more verbose
+ - updated from glibc-2.7 to glibc-2.8 (20080929)
+ - fixed sshd uid to be 43
+ - fixed pacman's ability to install packages: busybox.tar now auto-unzips
+ - pacman can now install .tbz and/or .tgz packages
+ - changed add-on thttpd to use group httpd (41)
+ - added new add-on "calc-2.12.4.0"
+ - fixed scripts/build-packages.sh to be able to find ".tbz" source packages
+ - fixed scripts/build-filesystem.sh to timestamp regular files, not /dev/*
+ - updated from bash-3.2 patchlevel 39 to bash-3.2.48
+ - updated from busybox-1.13.1 to busybox-1.13.4
+ - updated from e2fsprogs-1.41.3 to e2fsprogs-1.41.5
+
+Version 8.0, Sun Dec 14 15:39:50 MST 2008
+ - distribution named "umami"
+ - lost the x86_64 capability
+ - too many changes to possibly list
+ - build process is completely different, uses internal cross-compiler project
+ - build using cross-tools, not the host system's build environment and tools
+ - switched to Linux kernel 2.6.20
+ - added FUSE, File system in User Space, to the kernel to support ntfs-3g
+ - configure the kernel to be preemptable and use a 1 millisecond clock (was 4)
+ - updated from busybox-1.9.1 to busybox-1.13.1
+ - updated from dropbear-0.50 to dropbear-0.51
+ - updated from e2fsprogs-1.40.7 to e2fsprogs-1.41.3
+ - updated from iptables-1.4.0 to iptables-1.4.2
+ - added a User App to the source distribution
+ - "ttylinux-flash" shell script on CD makes bootable ttylinux flash/USB disks
+ - "Flash_Disk_Howto.txt" file on CD is a bootable ttylinux flash/USB disk HOWTO
+ - rewrote all init scripts in rc.d and rc.d/init.d
+ - the shell environment is POSIX
+ - all libraries and executables are stripped
+ - /etc/issue and /etc/issue.net are more interesting
+ - support for kernel modules in /etc/modtab {carry-over from other system udev}
+ - hostname changed from tiny.small to ttylinux_host.domain.net
+ - runs mke2fs on /tmp if its in /etc/fstab
+ - uses /etc/UTC with localtime symlink
+ - fixed /usr/share/udhcpc/default.script to correctly add items to resolv.conf
+ - /etc/network.conf changed to /etc/sysconfig/network
+ - /etc/network.d/* changed to /etc/sysconfig/network-scripts/*
+ - added /sbin/ifup and /sbin/ifdown
+ - added /usr/libexec /var/crash /var/lock/subsys /var/nobody
+ - something was in /dev that had the major,minor numbers of /dev/aio; fixed it
+ - changed symlink /dev/ram from /dev/ram1 to /dev/ram0 {is this correct?}
+ - chaged group ppp from 200 to 40
+ - store DSA and RSA private and public keys; put the fingerprints into /root
+ - added site building extensions
+ - added /sbin/sysconfig script to enable, disable and configure services
+ - added a lilo theme
+ - new global aliases in /etc/profile->bashrc
+ - added: /etc/ld.so.conf /etc/rpc /lib/librt /lib/libthread_db /usr/bin/ldd
+ - removed /usr/share/terminfo/r/rxvt
+ - added /usr/share/terminfo/v/versaterm
+ - added /usr/share/terminfo/v/vt320
+ - arguments to syslogd and klogd were wrong in ttylinux-7.0; fixed them
+ - fixed e2fsprogs build configuration
+ - fixed iptables build process
+ - updated bash from patchlevel 33 to patchlevel 39
+ - changed retawq from the Linux-specific clone() syscall to pthreads
+ - fixed ppp build process
+ - fixed and improved the lilo build process
+ - rewrote and moved /usr/sbin/installer to be /sbin/ttylinux-installer
+ - fixed the installer script to correctly remove loop device it creates
+ - revised the ttylinux package manager pacman to match the new package formats
+ - created ttylinux-setup script to setup ttylinux after booting to ramdisk
+
+Version 7.0, Sun Mar  9 19:55:20 CET 2008
+
+ - version bumped to 7.0 because of major package updates (glibc)
+ - filesystem size changed to 8M because of larger glibc
+ - changed syslog start script to also set console loglevel
+ - increased syslog rotation size from 60K to 128K
+ - updated bash to 3.2 patchlevel 33
+ - updated iptables to 1.4.0
+ - updated glibc to 2.7 (nptl libpthread now included)
+ - updated busybox to 1.9.1
+ - updated e2fsprogs to 1.40.7
+
+Version 6.2, Tue Oct 30 18:49:37 CET 2007
+
+ - updated e2fsprogs to 1.40.2
+ - updated busybox to 1.7.2
+ - updated dropbear to 0.50
+ - fixed up broken ownership of /home/guest
+ - updated bash to 3.2 patchlevel 25
+ - updated glibc to 2.5.1
+
+Version 6.1, Sat Jul  7 19:50:24 CEST 2007
+
+ - updated bash to 3.2 patchlevel 17
+ - updated e2fsprogs to 1.40
+ - updated iptables to 1.3.8
+ - updated busybox to 1.6.1
+
+Version 6.0, Sun Mar 18 14:40:46 CET 2007
+
+ - version bumped to 6.0 because of major package updates (glibc)
+ - added /var/log/lastlog to basesystem package (thanks to Maurice Kinal)
+ - updated busybox to 1.4.1
+ - updated lilo to 22.8
+ - updated dropbear to 0.49
+ - updated glibc to 2.5
+ - the minimum processor requirement is now 486SX due to glibc changes
+ - updated bash to 3.2 patchlevel 10
+
+Version 5.3, Sun Dec 31 15:40:42 CET 2006
+
+ - updated ncurses to 5.6 (only some terminfo files)
+ - updated iptables to 1.3.7
+ - updated bash to 3.2 patchlevel 9
+ - updated busybox to 1.3.1 (adds killall5 and resize)
+
+Version 5.2, Sat Nov  4 15:59:36 CET 2006
+
+ - improved DHCP shutdown procedure (thanks to Ronald Weist)
+ - suppressed warning about /proc not being mounted on startup
+ - updated e2fsprogs to 1.39
+ - dropped dhcpcd, udhcpc from busybox is used now
+ - dropped e3, vi from busybox is used now
+ - incorporated x86_64 build system changes (thanks to Maurice Kinal)
+ - included libnsl in glibc package (thanks again to Maurice)
+ - fix missing shadow support in passwd (thanks to Phillip T. George)
+ - updated iptables to 1.3.6
+ - updated busybox to 1.2.2.1
+ - updated bash to 3.2 patchlevel 3
+
+Version 5.1, Sat Aug 19 15:55:44 CEST 2006
+
+ - updated bash to 3.1 patchlevel 17
+ - added /dev/fd0, /dev/fd1, and /dev/nvram to basesystem
+ - updated busybox to 1.2.1 (adds diff, setconsole, zcip)
+ - updated lilo to 22.7.3
+ - updated ppp to 2.4.4
+
+Version 5.0, Wed Mar 22 13:00:20 CET 2006
+
+ - fifth anniversary release of the distribution
+ - updated bash to 3.1 patchlevel 14
+ - updated e3 to 2.7.0
+ - updated retawq to 0.2.6c
+ - updated dropbear to 0.48.1
+ - added installer script for CD-ROM to hard disk installation
+
+Version 4.10, Sun Jan 15 14:22:32 CET 2006
+
+ - updated bash to 3.1 patchlevel 5
+ - updated dropbear to 0.47
+ - updated busybox to 1.1.0
+
+Version 4.9, Sat Nov  5 19:36:49 CET 2005
+
+ - updated glibc to 2.3.6
+ - updated ncurses to 5.5 (only some terminfo files)
+ - updated e3 to 2.6.3
+ - updated lilo to 22.7.1
+ - updated iptables to 1.3.4
+
+Version 4.8, Sat Sep  3 15:11:29 CEST 2005
+
+ - updated e2fsprogs to 1.38
+ - updated dropbear to 0.46
+ - added e3em, e3ne, e3pi, e3vi symlinks (suggested by Paul Rogers)
+ - updated busybox to 1.01
+ - updated iptables to 1.3.3
+ - updated ppp to 2.4.4b1
+
+Version 4.7, Sat Jun  4 14:13:08 CEST 2005
+
+ - updated glibc to 2.3.5
+ - dropped netkit-ftp (you can use retawq and wget instead)
+ - dropped thttpd (still available as add-on package)
+ - updated lilo to 22.7
+ - set lot rotate size to 80 KB for more room
+ - added dropbear 0.45 ssh server and client
+ - updated e2fsprogs to 1.37
+ - fixed incorrect /dev/ippp1 device node
+ - prevented pacman -ql from trying to cat directories
+ - fixed building of packages with installation scripts
+
+Version 4.6, Mon Apr 25 22:32:19 CEST 2005
+
+ - set log rotate size for syslogd to 100 KB
+ - updated bash 3.0 to patchlevel 16
+ - updated e2fsprogs to 1.36 (included missing /sbin/badblocks,
+   thanks to Andy Alt <andy22@tcq.net> for noticing)
+ - updated e3 to 2.6.2
+ - updated iptables to 1.3.1
+ - updated retawq to 0.2.6b
+ - changed build system so that existing binary packages do
+   not get rebuilt (suggested by John Wittkoski)
+
+Version 4.5, Sat Feb 12 17:55:56 CET 2005
+
+ - changed package management to allow for binary packages
+ - updated glibc to 2.3.4
+ - updated retawq to 0.2.6
+
+Version 4.4, Sat Jan  8 14:31:50 CET 2005
+
+ - made build system modular (thanks to Nile Geisinger
+   <nilegeisinger@yahoo.com> for the suggestion and a sample
+   implementation)
+ - updated lilo to 22.6.1
+ - updated ppp to 2.4.3
+ - updated e3 to 2.6.1
+
+Version 4.3, Sat Oct 30 15:29:01 CEST 2004
+
+  - changed retawq build to enable threading support
+  - updated lilo to 22.6
+  - updated ppp to 2.4.2
+  - updated busybox to 1.00
+
+Version 4.2, Sun Sep  5 18:45:27 CEST 2004
+
+  - added PAGER variable to /etc/profile
+  - make dhcpcd binary work on 386 and 486 class machines
+  - added retawq 0.2.5a, a text mode web browser (thanks to
+    Arne Thomassen <arne@arne-thomassen.de>)
+  - added ncurses 5.4 (only some terminfo files, for retawq)
+
+Version 4.1, Wed Aug 25 20:13:32 CEST 2004
+
+  - glibc accidentally wasn't build for 386 class machines in 4.0
+
+Version 4.0, Tue Aug 24 22:50:53 CEST 2004
+
+  - version bumped to 4.0 because of major package updates (glibc)
+  - updated bash to 3.0
+  - updated busybox to 1.00-rc3 (adds awk, among others)
+  - dropped modutils, module tools from busybox are used now
+  - dropped netkit-base, inetd is available in busybox
+  - dropped netkit-telnet, telnet and telnetd are available in busybox
+  - dropped tinylogin, programs are part of busybox now
+  - dropped util-linux, programs are available in busybox
+  - updated e3 to 2.6.0
+  - updated glibc to 2.3.3
+  - added iptables-1.2.11
+  - dropped ipchains and ipmasqadm, use iptables
+  - basic firewall script changed to use stateful filtering
+  - updated lilo to 22.5.9
+  - dropped links due to space constraints
+  - added new networking parameters, see /etc/network.conf
+  - mount /sys automatically if running on 2.5.x or higher
+  - do more correct checking of fsck return values
+  - drop devfs support, devfs is considered obsolete
+
+Version 3.4, Sat Mar 20 17:17:06 CET 2004
+
+  - updated thttpd to 2.25b
+  - updated modutils to 2.4.27
+  - updated e2fsprogs to 1.35
+
+Version 3.3, Sun Oct 26 18:32:34 CET 2003
+
+  - recompiled glibc with -Os, saves 38 kb of space
+  - use dhcpcd -k to shutdown dhcpcd, instead of killall (thanks
+    to Maurice Kinal <tothings@minimalinux.org>
+  - updated lilo to 22.5.8
+  - fix /etc/rc.d/rc.functions never reporting "failed"
+
+Version 3.2, Mon Jul  7 05:10:16 CEST 2003
+
+  - added status option to ISDN initscript
+  - updated e3 to 2.43
+  - updated lilo to 22.5.6
+
+Version 3.1, Tue Apr  8 18:27:08 CEST 2003
+
+  - updated e3 to 2.42
+  - updated lilo to 22.5.1
+  - updated modutils to 2.4.25
+
+Version 3.0, Sat Feb 22 18:39:39 CET 2003
+
+  - use or add /dev/vc/X in /etc/inittab and /etc/securetty to allow
+    running a devfs-enabled and devfs-automounting kernel out of the box
+  - use /dev/rd/0 in /etc/fstab, also for use with devfs
+  - ATTENTION: using devfs with ttylinux is not thoroughly tested
+    because the ttylinux development platform is Linux 2.2
+  - version bumped to 3.0 since this is now the third year of ttylinux
+    development
+  - added service, bundle, and unbundle scripts (to be documented)
+  - updated util-linux to 2.11z
+  - updated lilo to 22.4.1
+
+Version 2.7, Wed Jan 15 19:58:07 CET 2003
+
+  - updated modutils to 2.4.22
+  - updated util-linux to 2.11y
+  - added ipmasqadm 0.4.2 (/usr/sbin/ipmasqadm, /usr/lib/ipmasqadm/*.so)
+  - added support for /etc/ppp/ip-up.local and /etc/ppp/ip-down.local
+  - changed default hostname from tiny to tiny.local
+  - use hwclock to load/store system time on boot and shutdown
+  - updated dhcpcd to 1.3.22-pl4
+  - updated tinylogin to 1.4
+
+Version 2.6, Sat Nov 16 01:51:29 CET 2002
+
+  - changed default keymap from de-latin1 to us
+  - changed default timezone from Europe/Berlin to UTC
+  - added ppprestart script to restart ppp subsystem
+  - make firewall find out ppp interface name automatically
+  - updated busybox to 0.60.5 (left out time, available as bash builtin)
+  - updated e2fsprogs to 1.32 (added ext3 HTREE support)
+  - updated modutils to 2.4.21
+  - updated e3 to 2.4
+  - updated lilo to 22.3.4
+  - changed pppconf to only recreate files on boot if they don't exist
+  - changed rc.sysinit to not recreate /etc/issue on boot
+
+Version 2.5, Tue Oct  8 20:01:13 CEST 2002
+
+  - updated e2fsprogs to 1.29
+  - updated util-linux to 2.11w
+  - updated modutils to 2.4.20
+  - updated dhcpcd to 1.3.22-pl3
+  - updated busybox to 0.60.4 (adds top)
+  - run meaningful stop actions on shutdown/reboot
+  - moved syslogd/klogd startup to seperate initscript
+
+Version 2.4, Fri Aug 23 00:57:52 CEST 2002
+
+  - remade filesystem with 512 inodes to gain 64 kb of space
+  - updated util-linux to 2.11u
+  - updated modutils to 2.4.19
+  - updated isdn4k-utils to 3.2p1
+
+Version 2.3, Mon Jul 22 16:40:27 CEST 2002
+
+  - updated lilo to 22.3.2
+  - updated util-linux to 2.11t
+  - updated bash to 2.05b
+
+Version 2.2, Wed Jun  5 17:00:22 CEST 2002
+
+  - updated util-linux to 2.11r
+  - updated e3 to 2.33
+  - updated lilo to 22.3
+  - updated thttpd to 2.23beta1
+
+Version 2.1, Mon Apr 29 17:21:01 CEST 2002
+
+  - updated modutils to 2.4.16
+  - updated e3 to 2.31
+  - updated util-linux to 2.11q
+  - updated busybox to 0.60.3 (adds losetup and time)
+
+Version 2.0, Tue Mar 19 19:29:56 CET 2002
+
+  - version bumped to 2.0 since this is now the second year of
+    ttylinux development
+  - updated e2fsprogs to 1.27 (added fsck.ext3 and mkfs.ext3 links)
+  - updated modutils to 2.4.14
+  - updated util-linux to 2.11o
+  - updated e3 to 2.2
+  - cleaned up and improved firewall script a bit (suggestions and
+    sample code by Harry Otten <hotten@dds.nl>)
+
+Version 1.19, Sat Feb 16 18:40:17 CET 2002
+
+  - updated e3 to 2.1
+  - updated modutils to 2.4.13
+  - updated e2fsprogs to 1.26
+  - updated lilo to 22.2
+  - updated tinylogin to 1.00
+
+Version 1.18, Mon Jan 28 17:04:29 CET 2002
+
+  - rewrote initscript system, all scripts now have at least options
+    for start|stop|restart, rc.start directory now contains symlinks
+    to scripts (idea and examples by Kevin J Walchko <walchko@ufl.edu>)
+  - updated dhcpcd to 1.3.22-pl1
+
+Version 1.17, Fri Dec 28 15:57:17 CET 2001
+
+  - updated modutils to 2.4.12
+  - updated util-linux to 2.11n
+  - updated e3 to 2.0
+  - fixed pkg -ql to work like rpm -ql
+  - added documentation about /etc/profile.d and pkg script
+
+Version 1.16, Tue Nov 20 21:38:13 CET 2001
+
+  - updated modutils to 2.4.11
+  - updated e3 to 1.81
+  - updated thttpd to 2.22beta4
+  - updated busybox to 0.60.2 (fixes route not displaying routes)
+  - added requirement of Unix98 pty support / devpts filesystem to
+    USER-GUIDE (suggested by Matt Bucknall <matt_bucknall@yahoo.co.uk>)
+  - updated bash to 2.05a
+
+Version 1.15, Wed Nov  7 21:02:51 CET 2001
+
+  - fixed an omission in the bootable CD instructions
+  - updated util-linux to 2.11m
+  - updated e3 to 1.8
+  - updated lilo to 22.1
+
+Version 1.14, Thu Oct 18 21:33:22 CEST 2001
+
+  - added documentation on creating a bootable ttylinux CD
+  - updated util-linux to 2.11l
+  - updated dhcpcd to 1.3.21-pl1
+  - updated modutils to 2.4.10
+  - updated e3 to 1.71
+  - updated lilo to 22.0.2
+
+Version 1.13, Tue Oct  2 03:19:16 CEST 2001
+
+  - updated util-linux to 2.11k
+  - updated modutils to 2.4.9
+  - updated e2fsprogs to 1.25
+  - added netkit-ftp-0.17
+  - cleaned up passwd/group, removed obsolete exim user/group
+  - added comments to /etc/lilo.conf
+  - changed /etc/profile so that every readable file from
+    /etc/profile.d will be sourced for login shells
+
+Version 1.12, Fri Aug 31 17:40:01 CEST 2001
+
+  - fix to the ISDN subsystem which required rebooting after running
+    pppconf
+  - added copyright messages to all scripts written by me
+  - improved PPP subsystem documentation in USER-GUIDE
+  - updated modutils to 2.4.8
+  - removed bogus contents of /var/log/messages|wtmp, /var/run/utmp
+
+Version 1.11, Tue Aug 28 00:26:35 CEST 2001
+
+  - make sure root fs is read-only before fsck in /etc/rc.d/rc.sysinit
+    (kernels 2.2.19+ and 2.4.5+ seem to force initrd to be read-write
+    no matter what kernel parameters (ro) were given)
+  - updated busybox to 0.60.1
+  - updated e2fsprogs to 1.23, added chattr/lsattr programs
+  - updated modutils to 2.4.7
+  - added isdn4k-utils-3.1pre1 (only isdnctrl and ipppd)
+  - expanded ppp dialup system for ISDN (see USER-GUIDE)
+
+Version 1.10, Sun Aug 12 14:36:08 CEST 2001
+
+  - removed obsolete contents of /etc/issue (thanks again to Adrian
+    Davey <ade@beth2.org.uk> for finding this glitch)
+  - added missing busybox features left out during the 0.60.0 update
+    (spotted by Douglas Bollinger <dcb@321.net>)
+
+Version 1.9, Tue Aug  7 21:25:46 CEST 2001
+
+  - removed makedevs, mknod can do the same
+  - updated BusyBox to 0.60.0 (adds pidof and traceroute)
+  - stripped everything with sstrip (suggested by Adrian Davey
+    <ade@beth2.org.uk>)
+  - updated util-linux to 2.11h
+
+Version 1.8, Sat Jul 14 13:38:15 CEST 2001
+
+  - updated busybox to 0.52 (adds adjtimex and cpio)
+  - updated e3 to 1.7
+  - updated links to 0.96
+  - updated util-linux to 2.11g
+
+Version 1.7, Sun Jun 24 18:25:12 CEST 2001
+
+  - fixed /etc/httpd.conf, thttpd uses ** wildcard instead of *
+  - made the bash prompt coloured
+  - updated e3 to 1.62
+  - updated e2fsprogs to 1.22, added badblocks
+  - updated util-linux to 2.11f
+
+Version 1.6, Thu May 31 00:17:11 CEST 2001
+
+  - updated bash to 2.05
+  - updated e3 to 1.51
+  - updated modutils to 2.4.6
+  - updated util-linux to 2.11d
+  - updated dhcpcd to 1.3.20-pl0
+  - recompiled everything except glibc with -Os to save yet another
+    few bytes
+
+Version 1.5, Thu May 10 14:36:33 CEST 2001
+
+  - updated ppp to 2.4.1
+  - made /etc/mtab symlink to /proc/mounts absolute
+  - updated thttpd web server to 2.21b
+  - updated e3 editor to 1.5
+  - changed ppp scripts so that only users from the ppp group can start and
+    stop the internet connection
+
+Version 1.4, Thu Apr 12 22:35:43 CEST 2001
+
+  - updated modutils to 2.4.5
+  - updated busybox to 0.51 (adds env and egrep)
+  - fixed /etc/inittab for new busybox
+
+Version 1.3, Sat Mar 24 00:34:53 CET 2001
+
+  - removed some rather useless busybox applets (dpkg, dpkg-deb, rpmunpack,
+    update, logread, and watchdog)
+  - MAJOR BUGFIX: all system files were owned by 500:500 instead of 0:0!
+
+Version 1.2, Sun Mar 18 17:36:57 CET 2001
+
+  - added some device files for commonly used devices
+  - added ipchains-1.3.10
+  - added basic firewall script, config /etc/firewall.conf
+  - removed tcpd, ipchains can do the same and more
+  - added from util-linux-2.11a: hwclock, fdformat, mkfs, fdisk, script,
+    cal, ddate, losetup, ipcrm, ipcs, hexdump, rdev, tunelp
+  - added lilo-21.4.3
+  - updated modutils to 2.4.3
+  - updated busybox to 0.50 (adds dos2unix, stty, tftp, ifconfig, route)
+  - removed net-tools-1.59, ifconfig and route now in busybox
+  - alias rm="rm -i" added
+
+Version 1.1, Tue Feb 27 15:16:48 CET 2001
+
+  - added modutils-2.4.2 to get module autoload capabilities
+  - fixed cleanup parts of rc.sysinit, /var/log/messages and wtmp no longer
+    cleared on bootup
+  - added dhcpcd-1.3.19-pl6
+  - stripped /lib/*.so fully, was only --strip-debug before
+  - added ldd script from glibc-2.1.3
+  - added pkg script with -qa, -ql, and -qf queries just like rpm
+  - added automated network device config via /etc/network.d, see USER-GUIDE
+  - added http server startup script
+  - removed reiserfs-utils, fails to compile with "-march=i386"
+  - added inetd from netkit-base-0.17 and start script
+  - added telnetd server from netkit-telnet-0.17
+  - added tcpd from tcp_wrappers-7.6
+
+Version 1.0, Thu Feb 22 14:34:19 CET 2001
+
+  - initial release

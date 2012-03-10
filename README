@@ -1,0 +1,8 @@
+This is the ttylinux build system.  It is a simple build system for a small
+family of very small Linux systems for several CPU architectures.
+
+For official ISO distribution releases see the ttylinux web page:
+http://ttylinux.org/
+
+Official ttylinux releases are supported through the mailing list:
+http://groups.google.com/group/ttylinux/

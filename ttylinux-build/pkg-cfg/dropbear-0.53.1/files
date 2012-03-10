@@ -1,0 +1,12 @@
+etc/rc.d/init.d/sshd
+etc/rc.d/rc.shutdown/30.sshd
+etc/rc.d/rc.startup/20.sshd
+etc/ssh
+etc/sysconfig/ssh
+root/ssh_key_gen.sh
+usr/bin/dbclient
+usr/bin/dropbearconvert
+usr/bin/dropbearkey
+usr/bin/dropbearmulti
+usr/bin/scp
+usr/sbin/dropbear

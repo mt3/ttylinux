@@ -1,0 +1,117 @@
+Current  Maintainer: (2008-    ) Douglas Jerome <douglas@ttylinux.org>
+
+
+Version 10.0, Tue Feb 28 22:14:02 MST 2012
+ - switched to a grand unified version -- went backwards, how wierd is that
+ - distribution named "bazooka"
+ - updated from alsa-lib-1.0.24 to alsa-lib-1.0.25
+
+Version 12.7, Sun Dec 25 11:56:03 MST 2011
+ - distribution named "buzzkill"
+ - updated from alsa-lib-1.0.23 to alsa-lib-1.0.24
+ - updated from binutils-2.20 to binutils-2.22
+ - updated from busybox-1.18.4 to busybox-1.19.3
+ - updated from dropbear-0.52 to dropbear-0.53.1
+ - updated from e2fsprogs-1.41.12 to e2fsprogs-1.42
+ - updated from glibc-2.12.1 to glibc-2.13
+ - updated from iptables-1.4.9.1 to iptables-1.4.12
+ - updated from module-init-tools-3.12 to module-init-tools-3.16
+
+Version 12.6, ddd Apr 19 hh:mm:ss MST 2011
+ - distribution named "maiko"
+ - updated from linux-2.6.34.6 to linux-2.6.38.1
+ - updated from busybox-1.18.1 to busybox-1.18.4
+
+Version 12.5, Sat Feb 26 20:44:34 MST 2011
+ - distribution named "boomer"
+ - (busybox) dhcp client adds OpenDNS nameservers if dhcp server doesn't
+ - (pacman) fixed for empty repo and --vers= srting
+
+Version 12.4, Sun Feb 20 12:30:40 MST 2011
+ - distribution named "zoomer"
+ - build system: major re-oranization
+ - build system: ISO now has all ttylinux packages, separate from initrd
+ - increased file system size to 24 MB
+ - PPC ISO boots in a Macintosh in the normal way
+ - fixed sound module loading for PPC Macintosh; sound is available once booted
+ - Linux kernel: added network devices
+ - Linux kernel: added PCMCIA and CardBus devices
+ - fixed udev rules for making /dev/{cdrom,cdrw,dvd,dvdrw} sym links
+ - reverted to busybox for mount and umount, mainly for NFS mounting
+ - updated from busybox-1.17.4 to busybox-1.18.1
+ - (bash) fixed job control; fg and bg commands now work
+ - (bash) dynamically linked to libncurses
+ - (busybox) added many programs
+ - (busybox) added "eject", mainly to eject CD-ROM from slot-loading Macintosh
+ - (gpm) switch from /dev/input/mouse0 to /dev/input/mice
+ - (iptables) added on/off FORWARD control
+ - (iptables) added /etc/sysconfig/firewall which has "FIREWALL=on"
+ - (ttylinux-installer) greatly reduced memory requirement for installation
+ - (ttylinux-installer) added lock-down capability in an installed system
+ - (ttylinux-installer) added target installation configuration file
+ - (udev) corrected and simplified udev rules -- thanks pablo <claws.wielder@gmail.com>
+
+Version 12.3, Sat Dec 25 20:18:31 MST 2010
+ - name changed from "meerkat" to "mana"
+ - added detail to the config/ directory organization
+ - changed the mechanism of using a specified kernel
+ - added prerun site-specific script callout to the make steps
+ - made easier use of cross-tools from a different location
+ - added support for serial port console and login for "console=<ttyS*>"
+ - added "login=<ttyS*>[,<ttyS*>]" boot parameter to put login on serial devs
+ - added "nologin=<tty*>[,<tty*>]" boot parameter remove login from virt console
+ - added "modules=<module>[,<module>]" to load specific kernel module(s)
+ - updated from busybox-1.17.3 to busybox-1.17.4
+ - (busybox) removed kernel module handling programs
+ - (busybox) removed mount, umount, losetup
+ - (busybox) switched from more to less, added pgrep, pkill, top
+ - (iptables) added "ping" in firewall configuration file /etc/firewall.conf
+ - (udev) corrected to load modules that have bus aliases e.g., for sound cards
+ - new package: (gpm-1.20.6)
+ - new package: (module-init-tools) added insmod, lsmod, modprobe, rmmod
+ - new package: (util-linux-ng) added mount, umount, losetup
+
+Version 12.2, Tue Nov 23 17:58:52 MST 2010
+ - name changed from "atheling" to "meerkat"
+ - changed "ttylinux.dist-config.sh" to "ttylinux-config.sh"
+ - added "make bcfg-stnd" and "make bcfg-suid" to make busybox config files.
+ - increased file system size fro 8 MB to 10 MB for ncurses libs, kernel modules
+ - split /dev from basefs for platform-specific /dev content
+ - added support for serial port console and login
+ - added support nfsroot
+ - added "nofireall" boot parameter
+ - enabled kernel modules
+ - added udev-163 to dynamically create /dev device nodes
+ - mount a /tmp partition if found in /etc/fstab at startup
+ - properly make /dev/root device node at startup
+ - updated from busybox-1.17.2 to busybox-1.17.3
+ - updated from ncurses-5.6 to ncurses-5.7
+ - (busybox) added locale support, more desktop compatibility
+ - (busybox) added mount by LABEL and UUID
+ - (ncurses) added ncurses libraries
+ - (iptables) added /etc/sysconfig/firewall
+
+Version 12.1, Sun Oct 17 18:02:17 MST 2010
+ - name changed from "backfire" to "atheling"
+ - fixed the setting of the initrd file system size
+ - added a package download to the makefile
+ - cross-tools: updated from gcc-4.3.4 to gcc-4.4.4
+ - Linux kernel: updated from 2.6.30.5 to 2.6.34.6
+ - updated from glibc-2.11 to glibc-2.12.1
+ - updated from bash-3.2.48 to bash-4.1
+ - updated from busybox-1.16.1 to busybox-1.17.2
+ - updated from e2fsprogs-1.41.10 to e2fsprogs-1.41.12
+ - updated from iptables-1.4.6 to iptables-1.4.9.1
+ - (e2fsprogs) added /sbin/tune2fs
+
+Version 11.2, Sat Jul 10 17:51:03 MST 2010
+ - name changed from "aardvark" to "backfire"
+ - fixed a makefile shell problem for some hosts
+ - fixed the ttylinux-flash script
+ - improved the pacman and ttylinux-installer scripts
+ - (busybox) removed rtcwake
+ - (bash) fixed a bash build problem for some hosts
+
+Version 11.1, Wed Apr 21 22:56:34 MST 2010
+ - distribution named "aardvark"
+ - initial powerpc release

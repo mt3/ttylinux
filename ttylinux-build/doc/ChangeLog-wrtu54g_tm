@@ -1,0 +1,20 @@
+Current  Maintainer: (2008-    ) Douglas Jerome <douglas@ttylinux.org>
+
+
+Version 10.0, Tue Feb 28 22:14:02 MST 2012
+ - distribution named "bazooka"
+ - updated from uClibc-0.9.31 to  uClibc-0.9.32
+ - updated from bash-4.1 to bash-4.2
+ - updated from busybox-1.18.5 to busybox-1.19.3
+ - updated from e2fsprogs-1.41.14 to e2fsprogs-1.42
+
+Version 0.3, Jan 14 20:43
+ - distribution named "buzzkill"
+ - changed ram disk size from 4 MB to 5 MB
+ - updated from busybox-1.18.4 to busybox-1.18.5
+ - updated from dropbear-0.52 to dropbear-0.53.1
+ - updated from e2fsprogs-1.41.12 to e2fsprogs-1.41.14
+
+Version 0.2, Apr 18 21:07
+ - distribution named "maiko"
+ - initial mipsel-uClibc release for WRTU54G-TM

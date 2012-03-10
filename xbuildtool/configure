@@ -1,0 +1,271 @@
+#!/bin/bash
+
+
+# This file is NOT part of the kegel-initiated cross-tools software.
+# This file is NOT part of the crosstool-NG software.
+# This file IS part of the ttylinux xbuildtool software.
+# The license which this software falls under is GPLv2 as follows:
+#
+# Copyright (C) 2008-2010 Douglas Jerome <douglas@ttylinux.org>
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the Free
+# Software Foundation; either version 2 of the License, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+# more details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+# Place, Suite 330, Boston, MA  02111-1307  USA
+
+
+# *****************************************************************************
+#
+# PROGRAM INFORMATION
+#
+#	Developed by:	xbuildtool project
+#	Developer:	Douglas Jerome, drj, <douglas@ttylinux.org>
+#
+# FILE DESCRIPTION
+#
+#	This script sets up an environment for building cross-compiling GNU
+#	Linux tool chains.
+#
+# CHANGE LOG
+#
+#	29dec10	drj	Re-wrote ttylinux cross-tools setup.sh for xbuildtool.
+#	20dec10	drj	Comment updates.
+#	08apr10	drj	Added *awk checks.
+#	17mar10	drj	Switched from #!/bin/sh to #!/bin/bash
+#	03mar10	drj	Added constants at the beggining of main.
+#	01aug09	drj	Added the setup of the sym links to the host tools.
+#	22jul09	drj	Removed the host-based tool chain proxy.
+#	20dec08	drj	Moved the download capabilities to a different file.
+#	14nov08	drj	Fixed the host-based proxy cross-tool directory setup.
+#	13nov08	drj	Changed to avoid variation in "ld --version" output.
+#	10nov08	drj	Changed from #!/bin/bash --posix to #!/bin/sh -eu
+#	08nov08	drj	Original file creation.
+#
+# *****************************************************************************
+
+
+# *************************************************************************** #
+#                                                                             #
+# S U B R O U T I N E S                                                       #
+#                                                                             #
+# *************************************************************************** #
+
+
+# *****************************************************************************
+# xbt_path_search
+# *****************************************************************************
+
+# Usage: xbt_path_search <program name>
+
+xbt_path_search() {
+	local prog=""
+	local p
+	for p in ${PATH//:/ }; do
+		[[ -x "${p}/$1" ]] && prog="${p}/$1"
+	done
+	echo ${prog}
+}
+
+
+# *****************************************************************************
+# xbt_prog_link
+# *****************************************************************************
+
+# Usage: xbt_prog_link <program name>
+
+xbt_prog_link() {
+	local progPath=""
+	local progName="${MACHTYPE}-$1"
+	progPath=$(xbt_path_search ${progName})
+	if [[ -n "${progPath}" ]]; then
+		echo "i> Found ${progName}."
+	else
+		progPath=$(xbt_path_search $1)
+		if [[ -z "${progPath}" ]]; then
+			echo "E> NO $1 found in PATH."
+			echo "E> PATH must include path to $1."
+			exit 1
+		fi
+		echo "i> Setting up link to ${progName}."
+		ln --force --symbolic "${progPath}" "bin-link/${progName}"
+	fi
+}
+
+
+# *************************************************************************** #
+#                                                                             #
+# M A I N   P R O G R A M                                                     #
+#                                                                             #
+# *************************************************************************** #
+
+
+# *****************************************************************************
+# Setup Constants and Environment
+# *****************************************************************************
+
+K_BLD_ENV_FILE="./xbt-build-env.sh"
+
+_TB=$'\t'
+_NL=$'\n'
+_SP=$' '
+
+export IFS="${_SP}${_TB}${_NL}"
+export LC_ALL=POSIX
+export PATH=/bin:/usr/bin:/usr/sbin
+
+unset _TB
+unset _NL
+unset _SP
+
+set -o errexit # # Exit immediately if a command exits with a non-zero status.
+set -o nounset # # Treat unset variables as an error when substituting.
+
+umask 022
+
+
+# *****************************************************************************
+# Check Host Configuration
+# *****************************************************************************
+
+# Host MACHTYPE
+#
+set +o nounset
+if [[ -z "${MACHTYPE}" ]]; then
+	echo "E> Environment variable MACHTYPE is not set."
+	echo "E> MACHTYPE is a GNU configuration name."
+	echo "E> Building this toolset needs a proper MACHTYPE."
+	echo "ref: http://sources.redhat.com/autobook/autobook/autobook_17.html"
+	exit 1
+fi
+set -o nounset
+
+# Check the xbuildtool key file, ".xbuildtool".
+#
+set +o errexit
+checksum=$(md5sum .xbuildtool 2>/dev/null)
+set -o errexit
+if [[ -z "${checksum}" ]]; then
+	echo "E> Make sure you are in the xbuildtool top-level directory."
+	echo "E> If you are then check your system for md5sum."
+	exit 1
+fi
+if [[ ${checksum%% *} != bec4abca84eb7d3562e61d32c01279d7 ]]; then
+	echo "E> Make sure you are in the xbuildtool top-level directory."
+	echo "E> If you are, something is wrong with xbuildtool; replace it."
+	exit 1
+fi
+unset checksum
+
+# Check for awk.
+#
+awkProg=""
+gawkProg=0
+mawkProg=0
+for p in ${PATH//:/ }; do
+	[[ -x "${p}/gawk" ]] && gawkProg=1
+	[[ -x "${p}/mawk" ]] && mawkProg=1
+	[[ -L "${p}/awk"  ]] && awkProg=$(readlink "${p}/awk") && break
+done
+[[ ${mawkProg} = 1 ]] && {
+	echo "i> Found mawk: a tool chain build is likely to NOT work."
+}
+if [[ -n "${awkProg}" ]]; then
+	[[ ${awkProg} = "mawk" ]] && {
+		echo "E> $(which awk) -> mawk"
+		echo "E> Your system cannot build a GNU tool chain."
+		echo "E> Remove mawk. Install gawk."
+		exit 1
+	}
+fi
+unset awkProg
+unset gawkProg
+unset mawkProg
+
+
+# *****************************************************************************
+# Setup links to the host tools.
+# *****************************************************************************
+
+echo ""
+echo "MACHTYPE: ${MACHTYPE}"
+
+[[ -d "bin-link" ]] && rm --force --recursive "bin-link"
+mkdir "bin-link"
+
+xbt_prog_link "ar"
+xbt_prog_link "as"
+xbt_prog_link "cpp"
+xbt_prog_link "g++"
+xbt_prog_link "gcc"
+xbt_prog_link "ld"
+xbt_prog_link "nm"
+xbt_prog_link "objcopy"
+xbt_prog_link "ranlib"
+xbt_prog_link "size"
+xbt_prog_link "strip"
+
+
+# *****************************************************************************
+# Create the site configuration file.
+# *****************************************************************************
+
+echo ""
+echo "i> Setting up site configuration in \"${K_BLD_ENV_FILE}\"."
+
+ncpus=$(grep "^processor" /proc/cpuinfo | wc -l)
+
+rm -f "${K_BLD_ENV_FILE}"
+>"${K_BLD_ENV_FILE}"
+echo "# vim: syntax=sh"                                >>"${K_BLD_ENV_FILE}"
+echo ""                                                >>"${K_BLD_ENV_FILE}"
+echo "# xbuildtool Site Configuration Parameters"      >>"${K_BLD_ENV_FILE}"
+echo "# Setup on $(date)"                              >>"${K_BLD_ENV_FILE}"
+echo ""                                                >>"${K_BLD_ENV_FILE}"
+echo "export XBT_DIR=\"$(pwd)\""                       >>"${K_BLD_ENV_FILE}"
+echo "export XBT_BINLINK_DIR=\"\${XBT_DIR}/bin-link\"" >>"${K_BLD_ENV_FILE}"
+echo "export XBT_BUILD_DIR=\"\${XBT_DIR}/build\""      >>"${K_BLD_ENV_FILE}"
+echo "export XBT_CONFIG_DIR=\"\${XBT_DIR}/config\""    >>"${K_BLD_ENV_FILE}"
+echo "export XBT_PATCH_DIR=\"\${XBT_DIR}/patches\""    >>"${K_BLD_ENV_FILE}"
+echo "export XBT_SOURCE_DIR=\"\${XBT_DIR}/pkg-src\""   >>"${K_BLD_ENV_FILE}"
+echo "export XBT_SCRIPT_DIR=\"\${XBT_DIR}/scripts\""   >>"${K_BLD_ENV_FILE}"
+echo "export XBT_BUILD=\"${MACHTYPE}\""                >>"${K_BLD_ENV_FILE}"
+echo "export XBT_HOST=\"${MACHTYPE}\""                 >>"${K_BLD_ENV_FILE}"
+echo "export ncpus=${ncpus}"                           >>"${K_BLD_ENV_FILE}"
+
+echo "=> XBT_DIR=\"$(pwd)\""
+echo "=> XBT_BINLINK_DIR=\"\${XBT_DIR}/bin-link\""
+echo "=> XBT_BUILD_DIR=\"\${XBT_DIR}/build\""
+echo "=> XBT_CONFIG_DIR=\"\${XBT_DIR}/config\""
+echo "=> XBT_PATCH_DIR=\"\${XBT_DIR}/paches\""
+echo "=> XBT_SOURCE_DIR=\"\${XBT_DIR}/pkg-src\""
+echo "=> XBT_SCRIPT_DIR=\"\${XBT_DIR}/scripts\""
+echo "=> XBT_BUILD=\"${MACHTYPE}\""
+echo "=> XBT_HOST=\"${MACHTYPE}\""
+echo "=> ncpus=${ncpus}"
+
+unset ncpus
+
+
+# *****************************************************************************
+# Exit OK
+# *****************************************************************************
+
+unset K_BLD_ENV_FILE
+
+echo ""
+echo "Setup all done."
+echo ""
+
+exit 0
+
+
+# end of file

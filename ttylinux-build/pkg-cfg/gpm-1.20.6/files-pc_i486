@@ -1,0 +1,5 @@
+etc/rc.d/init.d/gpm
+etc/rc.d/rc.shutdown/15.gpm
+etc/rc.d/rc.startup/85.gpm
+etc/sysconfig/mouse
+usr/sbin/gpm

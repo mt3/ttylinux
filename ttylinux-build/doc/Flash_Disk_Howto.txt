@@ -1,0 +1,421 @@
+How to Put ttylinux on a Flash Disk and Make it Bootable
+Copyright (C) 2008-2010 Douglas Jerome <douglas@ttylinux.org>
+
+
+FILE NAME
+
+	$RCSfile: Flash_Disk_Howto.txt,v $
+	$Revision: 1.11 $
+	$Date: 2010/03/01 02:33:11 $
+
+PROGRAM INFORMATION
+
+	Developed by:	ttylinux project
+	Developer:	Douglas Jerome, drj, <douglas@ttylinux.org>
+
+FILE DESCRIPTION
+
+	This document is a guide to putting ttylinux on a flash disk and making
+	the it bootable.
+
+CHANGE LOG
+
+	28feb10	drj	Corrected for the latest CD-ROM layout and added timeout
+			to the boot loaders to allow for boot options.
+
+	19dec09	drj	Corrected the description of the two required flash
+			drive directories. credit <legendre@nerp.net>
+
+	01sep09	drj	Updated to be consistent with revised ttylinux-flash
+			script and the CD-ROM directory and file structure.
+
+	07dec08	drj	Changed some descriptions for using the syslinux
+			executable program on the ttylinux CD-ROM.
+
+	04dec08	drj	Added suggestions on mounting the CD-ROM and USB disk.
+
+	22nov08	drj	Added failure path descriptions.  Finished testing the
+			installation processes.  Added section numbers and the
+			outline.
+
+	22nov08	drj	Changed ram0 location from flash disk to /tmp.  Fixed
+			the device referenced by the syslinux command.  Added
+			description of lilo's anomalous behavior.  Fixed the
+			fdisk usage in the description of boot problems.
+
+	21nov08	drj	Finished and baselined first version for ttylinux.
+
+
+                ------------------------------------------------
+
+
+How to Put ttylinux on a Flash Disk and Make it Bootable
+
+
+-- Document Outline --
+1. Preface
+2. Introduction
+3. Lilo Method
+4. Syslinux Method
+5. Automated Help
+6. Boot Problems
+
+
+==========
+1. Preface
+==========
+
+Caveat:  The syslinux method is known to work with syslinux-3.72.
+Caveat:  Instead of booting ttylinux, your flash disk may become unusable, but
+         that is not known to have happened.
+
+Advice:  Read before doing; reading does not take very long.  Look at the end
+         of this short document for problems and possible resolutions.
+
+
+===============
+2. Introduction
+===============
+
+Flash disks include USB disks which are often called flash drives, pen drives,
+USB memory sticks, travel drives, etc.
+
+This file describes two methods of copying ttylinux from its bootable CD-ROM
+and putting it onto a flash disk that is also made bootable.  The syslinux
+and lilo methods both can be done by ttylinux, but notice the syslinux program
+that makes the flash disk become bootable is not in the ttylinux file system,
+it is in the root directory on the ttylinux CD-ROM.  These methods probably
+only make sense on a Linux system, particularly the lilo method.
+
+You should save all your data on the flash disk to somewhere else and then
+remove all files and directories from the flash disk.  Making a mistake in this
+process can endanger any data on the flash disk.  Also, if the Linux kernel is
+too far from the beginning of the flash disk memory it may not be bootable;
+this has nothing to do with where the file name is in a directory listing or in
+Windows explorer.
+
+You can format the flash disk to be a Linux file system, but leaving a USB disk
+in Windows format, probably vfat aka W95 FAT32, is very convenient.
+
+Prerequisites:  Depending upon the method you use, you need to have privilege
+                to write to the flash disk device e.g. /dev/sdc or to write to
+                its mountable partition you want to use e.g. /dev/sdc1, and
+                with the lilo method you need to create a device node.  It is
+                therefore very likely you need to be root.
+
+                You need to *know* the flash disk device node e.g. /dev/sdc and
+                its mountable partition you want to use e.g. /dev/sdc1.  Read
+                the previous sentence again, note the distinction between the
+                disk and partition devices.
+
+In the following descriptions <disk> and <partition> are used to represent
+device nodes in the /dev directory.
+
+<disk> is the device node of the entire flash disk e.g. sdc, in which case
+       /dev/<disk> represents /dev/sdc.
+
+<partition> is the device node of the mountable partition on the flash disk
+            that you want to use to store the Linux kernel and ttylinux file
+            system e.g. sdc1, in which case /dev/<partition> represents
+            /dev/sdc1.
+
+In the following descriptions, /mnt/flash references the mount point in your
+file system to which the flash disk mounts.  Your actual mount point may be
+different, substitute accordingly.
+
+A USB disk partition probably should be mounted with the following mount
+command.  The second command gives you the UUID of the mounted partition, it
+may not work, but if it does then write down or otherwise save the UUID.
+
+     $ mount -t vfat /dev/<partition> /mnt/flash
+     $ blkid /dev/<partition>
+
+/mnt/cdrom represents the location of the mounted CD-ROM in the following
+descriptions.
+
+Have the ttylinux boot CD-ROM in the CD-ROM drive and mount it.  The CD-ROM
+should be mounted as type iso9660 e.g., mounted by the following command.
+
+     $ mount -t iso9660 /dev/<disk> /mnt/cdrom
+
+If you have an image of the ttylinux CD-ROM mounted via loopback device, or
+have the files from the ttylinux CD-ROM in another directory, you can use that.
+
+In the following descriptions there are example commands; they are prefixed by
+a shell prompt of "$ ", and comments to shell commands begin with the shell
+comment character '#".
+
+
+==============
+3. Lilo Method
+==============
+
+Warning:  After performing this method subsequent uses of the syslinux method
+          may have no affect, or misboot with odd errors, or the lilo boot
+          loader may remain on the flash disk and continue to boot the kernel.
+          I've never seen the syslinux method work after using this lilo
+          method.  There is a way to fix this; it is described at the end of
+          the syslinux method.
+
+Mount the flash disk.  The following description uses /mnt/flash to reference
+the mount point of the flash disk.  Did you remember to first save everything
+you want to keep off the flash disk and remove everything from it?  After
+mounting the flash disk, create two new directories named "boot" and "config"
+on the flash disk.
+
+     $ mkdir /mnt/flash/boot
+     $ mkdir /mnt/flash/config
+
+The flash disk should now have nothing on it except the two empty directories
+just made, /boot and /config.
+
+Copy the ttylinux Linux kernel and ttylinux file system image from the CD-ROM
+onto the flash disk; put them into the boot directory.
+
+     $ cp /mnt/cdrom/boot/vmlinuz          /mnt/flash/boot/
+     $ cp /mnt/cdrom/boot/filesys.gz       /mnt/flash/boot/
+     $ cp /mnt/cdrom/config/ttylinux-setup /mnt/flash/config/ttylinux
+
+You need a ram0 device node for lilo to reference during the boot installation.
+If you don't have one in /dev then you need to make one somewhere; it is better
+to NOT make one in /dev in the case your system uses udev.  You can make one in
+/tmp with the following command.
+
+     $ mknod -m 660 /tmp/ram0 b 1 0
+
+A lilo configuration file is needed.  It is convenient to put it on the flash
+disk in the boot directory; the file is /mnt/flash/boot/lilo.conf.  Use the
+following example lilo.conf file, changing <disk> and </mnt/flash> and
+</dev/ram0> to be the actual values.  Use ttylinux-flash=<UUID> ONLY if you got
+the UUID when previously mounting the USB disk partition, replacing <UUID> with
+the actual UUID value.
+
+NOTE The location of the ram0 device is the actual one you want to use; if you
+     didn't create one then it probably is /dev/ram0.
+
+NOTE Everything between the dashed lines is the /mnt/flash/boot/lilo.conf file.
+
+-------------------------------------------------------------------------------
+boot = /dev/<disk>
+disk = /dev/<disk> bios=0x80
+map  = </mnt/flash>/boot/map
+
+install     = menu
+menu-scheme = Yb:Yk:kb:Yb
+menu-title  = "LILO (LInux LOader) boot ttylinux"
+
+compact
+default = ttylinux
+lba32
+prompt
+timeout = 150
+
+image=</mnt/flash>/boot/vmlinuz
+     append = "ro ttylinux-flash=<UUID>"
+     label  = ttylinux
+     root   = </dev/ram0>
+     initrd = </mnt/flash>/boot/filesys.gz
+     read-only
+-------------------------------------------------------------------------------
+
+After the lilo.conf file is correct, execute lilo to make the flash disk
+bootable with these two commands.
+
+     $ lilo -M /dev/<disk> mbr
+     $ lilo -C /mnt/flash/boot/lilo.conf
+
+There probably are many possible problems.  If there were no FATAL problems
+reported from lilo, unmount and reboot the flash disk.
+
+----------------
+Possible Problem
+----------------
+
+Lilo may detect a partition problem and give you message like the following:
+
+     Warning: boot record relocation beyond BPB is necessary: /dev/sdc
+     Added ttylinux *
+     Fatal: LILO internal error:  Would overwrite Partition Table
+
+--------------------
+Possible Resolutions
+--------------------
+
+If you have this problem you may want to do one of the following:
+
+=> If you are using a USB disk then you can use a Windows-based USB boot disk
+   tool; several are freely available.
+
+=> Use a commercial partition tool to fix the flash disk partition table.
+
+=> Use a different flash disk.
+
+
+==================
+4. Syslinux Method
+==================
+
+You need to have the syslinux executable program.  The root directory of the
+ttylinux CD-ROM should have the syslinux executable program from syslinux-3.72.
+
+Other syslinux sources: You may have it in your current linux distribution.  Or
+you can get the latest version from
+http://www.kernel.org/pub/linux/utils/boot/syslinux/ and after untarring it,
+find the syslinux executable in the linux directory.
+
+Caveat:  The syslinux method is only known by the author to work with
+         syslinux-3.72; it probably works with newer versions and a few of the
+         older versions.
+
+Mount the flash disk.  The following description uses /mnt/flash to reference
+the mount point of the flash disk.  Did you remember to first save everything
+you want to keep off the flash disk and remove everything from it?  The flash
+disk should now have nothing on it.
+
+NOTE  The following lilo fixup also fixes many USB disks that do not properly
+      boot.
+
+NOTE  If you are doing this with a flash disk that previously was booting from
+      a lilo boot loader e.g., you previously used the above lilo method, then
+      perform this lilo operation before continuing:
+
+      $ lilo -M /dev/<disk> mbr
+
+Mount the flash disk.  The following description uses /mnt/flash to reference
+the mount point of the flash disk.  Did you remember to first save everything
+you want to keep off the flash disk and remove everything from it?  After
+mounting the flash disk, create some new directories on the flash disk:
+
+     $ mkdir /mnt/flash/boot
+     $ mkdir /mnt/flash/boot/syslinux
+     $ mkdir /mnt/flash/config
+
+Copy the syslinux help message files from the CD-ROM onto the flash disk.  Copy
+the ttylinux Linux kernel and ttylinux file system image files from the CD-ROM
+onto the flash disk:
+
+     $ cp /mnt/cdrom/boot/vmlinuz          /mnt/flash/boot/
+     $ cp /mnt/cdrom/boot/filesys.gz       /mnt/flash/boot/
+     $ cp /mnt/cdrom/boot/boot.msg         /mnt/flash/boot/syslinux/
+     $ cp /mnt/cdrom/boot/help.msg         /mnt/flash/boot/syslinux/
+     $ cp /mnt/cdrom/config/syslinux       /mnt/flash/config/syslinux
+     $ cp /mnt/cdrom/config/ttylinux-setup /mnt/flash/config/ttylinux
+
+A syslinux configuration file is needed.  It must be put on the flash disk in
+the boot/syslinux directory; the file is /mnt/flash/boot/syslinux/syslinux.cfg.
+Use the following example syslinux.cfg file.  Use ttylinux-flash=<UUID> ONLY if
+you got the UUID when previously mounting the USB disk partition, replacing
+<UUID> with the actual UUID value.  Everything between the dashed lines is the
+/mnt/flash/boot/syslinux/syslinux.cfg file.
+long.
+
+-------------------------------------------------------------------------------
+default ttylinux
+display boot.msg
+prompt  1
+timeout 150
+
+F1 boot.msg
+F2 help.msg
+
+label ttylinux
+        kernel /boot/vmlinuz
+        append initrd=/boot/filesys.gz root=/dev/ram0 ro ttylinux-flash=<UUID>
+-------------------------------------------------------------------------------
+
+Now make the flash disk bootable with syslinux; notice the partition device is
+used, not the disk device.
+
+     $ syslinux -d boot/syslinux /dev/<partition>
+
+There probably are many possible problems.  If there were no problems, unmount
+and reboot the flash disk.
+
+----------------
+Possible Problem
+----------------
+
+When executing the syslinux command you see an error message something like
+"Cluster sizes larger than 16K not supported".
+
+--------------------
+Possible Resolutions
+--------------------
+
+Install a more recent version of syslinux.
+
+
+=================
+5. Automated Help
+=================
+
+It really is best to use the script described herein.
+
+For the automated help described below, both the CD-ROM and the flash disk must
+be mounted before executing the ttylinux-flash script.
+
+There is a shell script in the ttylinux file system that does a variation of
+the lilo and syslinux methods.  Backup anything you want to keep from your
+flash disk before using the script.  The script is invoked with a command line
+option telling it which method to use; guess which option does which.
+
+ttylinux-flash --lilo     <CD-ROM path> <flash disk path> <flash disk device>
+ttylinux-flash --syslinux <CD-ROM path> <flash disk path> <flash disk device>
+
+The following command examples use the same conventions as above for the paths
+and device nodes.
+
+ttylinux-flash --lilo     /mnt/cdrom /mnt/flash /dev/<disk>
+ttylinux-flash --syslinux /mnt/cdrom /mnt/flash /dev/<disk>
+
+If you want to run this script from a Linux system other than ttylinux, then
+run it from the ttylinux mounted at /mnt/cdrom, it will be
+/mnt/cdrom/sbin/ttylinux-flash.
+
+
+================
+6. Boot Problems
+================
+
+General
+-------
+
+Some flash disks seem to have a boot problem, something wrong with their zero
+block Master Boot Record (MBR).  Run fdisk on the disk device /dev/<disk> to
+see if the Boot flag is set on the partition that has the Linux kernel,
+/dev/<partition>.
+
+     # Check for the Boot flag
+     #
+     fdisk -l /dev/<disk>
+
+If the Boot flag is not set, use fdisk to toggle the bootable flag; the fdisk
+command is 'a'.  The fdisk usage will look something like the following, if the
+partition with the Linux kernel is 1.
+
+     $ fdisk /dev/<disk>
+     Command (m for help): a
+     Partition number (1-8): 1
+     Command (m for help): w
+
+It also is best to use this lilo command, after having used fdisk to set the
+partition bootable flag:
+
+     $ lilo -M /dev/<disk> mbr
+
+Strange Lilo Boot Errors
+------------------------
+
+If you get part of the word LILO and then nothing or a repeating sequence of
+numbers or words, or if you get "Can't load operating system" or even nothing
+at all: put the flash disk back into the computer from wich you where loading
+it with ttylinux and try this lilo command:
+
+     $ lilo -M /dev/<disk> mbr
+
+Try bootable again after executing the above command; if the flash disk still
+doesn't correctly boot, you may need to repeat either the lilo or syslinux
+method of installing ttylinux.
+
+
+[eof]

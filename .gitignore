@@ -1,0 +1,41 @@
+# Temporary files
+*~
+*.[oa]
+*.swp
+
+# ttylinux build system
+ttylinux-build/Site
+ttylinux-build/bootloader/uboot/MLO
+ttylinux-build/bootloader/uboot/*.MAKELOG
+ttylinux-build/bootloader/uboot/mkimage
+ttylinux-build/bootloader/uboot/u-boot.bin
+ttylinux-build/bootloader/xload
+ttylinux-build/config/platform-wrtu54g_tm/adm8668.tar.bz2
+ttylinux-build/build/*
+ttylinux-build/doc/User_Guide.aux
+ttylinux-build/doc/User_Guide.dvi
+ttylinux-build/doc/User_Guide.html
+ttylinux-build/doc/User_Guide.log
+ttylinux-build/doc/User_Guide.pdf
+ttylinux-build/doc/User_Guide.ps
+ttylinux-build/doc/User_Guide.toc
+ttylinux-build/doc/multi
+ttylinux-build/doc/single
+ttylinux-build/doc/temp.*
+ttylinux-build/img/
+ttylinux-build/mnt/
+ttylinux-build/pkg-bin/*
+ttylinux-build/pkg-src/*
+ttylinux-build/sysroot/*
+ttylinux-build/ttylinux-config.sh
+ttylinux-build/ttylinux-pkglst.txt
+ttylinux-build/var/log/*
+ttylinux-build/var/run/*
+ttylinux-build/verification
+
+# cross-tool builder
+xbuildtool/bin-link/*
+xbuildtool/build/*
+xbuildtool/pkg-src/*
+xbuildtool/xbt-build-config.sh
+xbuildtool/xbt-build-env.sh
