@@ -29,6 +29,7 @@
 #
 # CHANGE LOG
 #
+#	13mar12	drj	Hide ttylinux_target_umount stderr.
 #	15feb12	drj	Rewrite for build process reorganization.
 #	03mar11	drj	Added TTYLINUX_TAR_NAME
 #	21jan11	drj	Conditional "ws-" prefix for the IMG and ISO file names.
@@ -221,7 +222,7 @@ ttylinux_target_umount() {
 
 set +e
 echo -n "Unmounting ... "
-umount -d ${TTYLINUX_MNT_DIR}
+umount -d ${TTYLINUX_MNT_DIR} 2>/dev/null
 [[ $? -eq 0 ]] && echo "OK" || echo "FAILED"
 set -e
 
