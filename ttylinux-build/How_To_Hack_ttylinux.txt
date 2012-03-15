@@ -1,0 +1,112 @@
+# vim: syntax=cfg
+
+# This file should describe the build process.
+
+# Make is used as a program launcher, there is not much use of dependency
+# tracking.  The build steps are implemented by shell scripts in the scripts/
+# directory.  All the shell scripts, and the shell commands in the makefile
+# rules, are bash.  There is a build script for each package in an appropriate
+# subdirectory in pkg-cfg/
+
+# List of Shell Variables and Functions
+
+./ttylinux-config.sh
+	TTYLINUX_NAME=bazooka
+	TTYLINUX_VERSION=10.0
+	#
+	TTYLINUX_PLATFORM=mac_g4
+	TTYLINUX_XBT_DIR="../cross-tools-2.14-3.1"
+	TTYLINUX_XBT="powerpc-generic-linux-gnu"
+	TTYLINUX_CFLAGS="-mcpu=powerpc -mtune=powerpc"
+	#
+	TTYLINUX_RAMDISK_SIZE=64
+	TTYLINUX_STRIP_BINS=y .................. optional
+	TTYLINUX_USER_KERNEL ................... optional
+	TTYLINUX_SITE_SCRIPTS=y ................ optional
+	#
+	TTYLINUX_ISOLINUX=y .................... optional
+	TTYLINUX_ISOLINUX_VERSION .............. optional
+	TTYLINUX_ISOLINUX_PATCH ................ optional
+	TTYLINUX_ISOLINUX_TARGET ............... optional
+	TTYLINUX_UBOOT=y ....................... optional
+	TTYLINUX_UBOOT_VERSION ................. optional
+	TTYLINUX_UBOOT_PATCH ................... optional
+	TTYLINUX_UBOOT_TARGET .................. optional
+	#
+	TTYLINUX_PACKAGE_BUSYBOX_HAS_LOSETUP ... optional
+	TTYLINUX_PACKAGE_GCC_GMP_VER ........... optional
+	TTYLINUX_PACKAGE_GCC_MPFR_VER .......... optional
+	TTYLINUX_PACKAGE_GCC_MPC_VER ........... optional
+	TTYLINUX_PACKAGE_NCURSES_HAS_LIBS ...... optional
+	#
+	TTYLINUX_PACKAGE[@]
+
+scripts/_functions.sh
+	TEXT_BRED="\E[1;31m"    # bold+red
+	TEXT_BGREEN="\E[1;32m"  # bold+green
+	TEXT_BYELLOW="\E[1;33m" # bold+yellow
+	TEXT_BBLUE="\E[1;34m"   # bold+blue
+	TEXT_BPURPLE="\E[1;35m" # bold+purple
+	TEXT_BCYAN="\E[1;36m"   # bold+cyan
+	TEXT_BOLD="\E[1;37m"    # bold+white
+	TEXT_RED="\E[0;31m"     # red
+	TEXT_GREEN="\E[0;32m"   # green
+	TEXT_YELLOW="\E[0;33m"  # yellow
+	TEXT_BLUE="\E[0;34m"    # blue
+	TEXT_PURPLE="\E[0;35m"  # purple
+	TEXT_CYAN="\E[0;36m"    # cyan
+	TEXT_NORM="\E[0;39m"    # normal
+	K_TB=$'\t'
+	K_NL=$'\n'
+	K_SP=$' '
+	set -e # Exit immediately if a command exits with a non-zero status.
+	set -u # Treat unset variables as an error when substituting.
+	export IFS="${K_SP}${K_TB}${K_NL}"
+	export LC_ALL=POSIX
+	export PATH=/bin:/sbin:/usr/bin:/usr/sbin
+	umask 022
+	ncpus=$(grep "^processor" /proc/cpuinfo | wc -l)
+
+scripts/_functions.sh:: dist_config_setup() {
+	# This functions sets:
+	#
+	TTYLINUX_CPU=${TTYLINUX_XBT%%-*}
+	TTYLINUX_TARGET_TAG=version-cpu-platform
+	TTYLINUX_DIR="$(pwd)"
+	TTYLINUX_BOOTLOADER_DIR
+	TTYLINUX_BUILD_DIR
+	TTYLINUX_CONFIG_DIR
+	TTYLINUX_DOC_DIR
+	TTYLINUX_IMG_DIR
+	TTYLINUX_MNT_DIR
+	TTYLINUX_PKGBIN_DIR
+	TTYLINUX_PKGBLD_DIR
+	TTYLINUX_PKGCFG_DIR
+	TTYLINUX_PKGSRC_DIR
+	TTYLINUX_PLATFORM_DIR
+	TTYLINUX_SCRIPT_DIR
+	TTYLINUX_SITE_DIR
+	TTYLINUX_SYSROOT_DIR
+	TTYLINUX_VAR_DIR
+	TTYLINUX_IMG_NAME
+	TTYLINUX_IRD_NAME
+	TTYLINUX_TAR_NAME
+	TTYLINUX_SRC_NAME
+	TTYLINUX_ISO_NAME
+
+scripts/_functions.sh:: build_config_setup() {
+	# This functions sets:
+	#
+	TTYLINUX_XTOOL_DIR = ${TTYLINUX_XBT_DIR}/${TTYLINUX_XBT}
+	XBT_LINUX_ARCH ...... set from ${TTYLINUX_XTOOL_DIR}/_versions
+	XBT_LINUX_VER ....... set from ${TTYLINUX_XTOOL_DIR}/_versions
+	XBT_LIBC_VER ........ set from ${TTYLINUX_XTOOL_DIR}/_versions
+	XBT_XBINUTILS_VER ... set from ${TTYLINUX_XTOOL_DIR}/_versions
+	XBT_XGCC_VER ........ set from ${TTYLINUX_XTOOL_DIR}/_versions
+
+# Available functions:
+#
+scripts/_functions.sh:: dist_root_check()
+scripts/_functions.sh:: build_spec_show()
+scripts/_functions.sh:: ttylinux_target_mount()
+scripts/_functions.sh:: ttylinux_target_umount()

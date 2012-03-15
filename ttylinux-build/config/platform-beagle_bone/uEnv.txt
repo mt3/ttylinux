@@ -1,0 +1,28 @@
+# vim: syntax=dosbatch
+
+# BeagleBoard-xM
+# echo "U-Boot Script [boot.scr] Running : BeagleBoard ${beaglerev}"
+# mmc init
+# mmc rescan 0
+# setenv rdaddr 0x81600000
+# setenv loadaddr 0x80300000
+# setenv bootargs console=ttyO2,115200n8 vram=12MB omapfb.mode=dvi:1024x768MR-16@60 root=/dev/ram0 rw ramdisk_size=24576 enet
+# fatload mmc 0 ${rdaddr} ramdisk.gz
+# fatload mmc 0 ${loadaddr} uImage
+# bootm ${loadaddr} ${rdaddr}
+
+#bootargs=console=ttyO0,115200n8 androidboot.console=ttyO0 mem=256M root=/dev/mmcblk0p2 rw rootfstype=ext3 rootwait init=/init ip=off
+#bootcmd=mmc rescan 0 ; fatload mmc 0 81000000 uImage ; bootm 81000000
+#uenvcmd=boot
+
+#bootfile=uImage
+#address_uimage=0x80300000
+#mmc_root=/dev/mmcblk0p2 ro
+#mmc_root_fs_type=ext4 rootwait
+#bootargs=console=ttyO0,115200n8 ${mmc_root} ${mmc_root_fs_type}
+#mmc_load_uimage_deb=fatload mmc ${mmc_dev} ${address_uimage} ${bootfile}
+#mmc_load_uimage=run mmc_load_uimage_deb; run mmc_args; bootm ${address_uimage}
+
+mmc_root=/dev/mmcblk0p2 rw
+mmc_root_fs_type=ext4 rootwait
+bootargs=console=ttyO0,115200n8 root=/dev/mmcblk0p2 rootfstype=ext4 rw rootwait ip=off login=ttyO0

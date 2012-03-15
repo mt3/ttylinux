@@ -58,7 +58,7 @@
 # *****************************************************************************
 
 
-TTYLINUX_NAME    := bazooka
+TTYLINUX_NAME    := hawberk
 TTYLINUX_VERSION := 10.0
 
 

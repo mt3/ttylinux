@@ -30,6 +30,7 @@
 # CHANGE LOG
 #
 #	13mar12	drj	Hide ttylinux_target_umount stderr.
+#	08mar12	drj	Finally set ncpus to something.
 #	15feb12	drj	Rewrite for build process reorganization.
 #	03mar11	drj	Added TTYLINUX_TAR_NAME
 #	21jan11	drj	Conditional "ws-" prefix for the IMG and ISO file names.
@@ -256,12 +257,14 @@ K_TB=$'\t'
 K_NL=$'\n'
 K_SP=$' '
 
-set -e # Exit immediately if a command exits with a non-zero status.
-set -u # Treat unset variables as an error when substituting.
+set -e ; # Exit immediately if a command exits with a non-zero status.
+set -u ; # Treat unset variables as an error when substituting.
 
 export IFS="${K_SP}${K_TB}${K_NL}"
 export LC_ALL=POSIX
 export PATH=/bin:/sbin:/usr/bin:/usr/sbin
+
+ncpus=$(grep "^processor" /proc/cpuinfo | wc -l)
 
 umask 022
 

@@ -1,0 +1,17 @@
+
+Wed Mar 14 20:37:11 MST 2012
+----------------------------
+
+Currently, ttylinux uses the kernel tree available at
+
+https://github.com/hvaibhav/am335x-linux
+
+This kernel tree is actively developed and now may have changes that do not
+work with the current ttylinux BeagleBone kernel configuration file.  The last
+commit to this tree at the time this kernel tree was gotten for ttylinux was
+'521b08edffc6ea27144cc7d1787c0b9528470d41'.
+
+Get the kernel source tree and put it in the xbuildtool/pkg-src directory, then
+make the beagle_bone cross-tool chain; after that, read the
+How_To_Build_ttylinux.txt file.
+

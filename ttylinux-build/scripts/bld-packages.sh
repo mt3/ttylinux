@@ -29,6 +29,7 @@
 #
 # CHANGE LOG
 #
+#	08mar12	drj	Better setting NJOBS.
 #	16feb12	drj	Rewrite for build process reorganization.
 #	22jan12	drj	Minor fussing.
 #	23jan11	drj	Minor fussing.
@@ -245,10 +246,7 @@ sleep 1 # For detecting files newer than INSTALL_STAMP
 # reports an error in PKG_STATUS.
 #
 PKG_STATUS=""
-NJOBS=${ncpus:-1} # Setup ${NJOBS} for parallel makes
-bitch=$(sed --expression="s/[[0-9]]//g" <<<"${NJOBS}")
-[[ -n "${bitch}" ]] && NJOBS=$((${bitch} + 1)) || NJOBS=1
-unset bitch
+[[ -z "${ncpus//[0-9]}" ]] && NJOBS=$((${ncpus:-1} + 1)) || NJOBS=2
 echo -n "b." >&${CONSOLE_FD}
 pkg_patch     $1
 pkg_configure $1

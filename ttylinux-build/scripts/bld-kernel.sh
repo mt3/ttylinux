@@ -29,6 +29,7 @@
 #
 # CHANGE LOG
 #
+#	08mar12	drj	Better setting njobs.
 #	18feb12	drj	Rewrite for build process reorganization.
 #	11feb12	drj	Avoid patching a user-custom ttylinux kernel.
 #	11feb12	drj	Fixed source location.  Removed old targets.
@@ -156,13 +157,10 @@ echo -n "b." >&${CONSOLE_FD}
 
 trap kernel_clean EXIT
 
-# Set ${njobs} to ${ncpus} or 1 if ${ncpus} is undefined, then check for
-# non-digits in ${njobs}; if any are found then use the number 1 instead of
-# incrementing ${njobs}.  This is the number of jobs to use for make.
+# Agressively set njobs: set njobs to 2 if ${ncpus} is unset or has non-digit
+# characters.
 #
-njobs=${ncpus:-1}
-bitch=$(sed --expression="s/[[0-9]]//g" <<<"${njobs}")
-[[ -z "${bitch}" ]] && njobs=$((${bitch} + 1)) || njobs=1
+[[ -z "${ncpus//[0-9]}" ]] && njobs=$((${ncpus:-1} + 1)) || njobs=2
 
 # Set the right kernel make target.
 case "${TTYLINUX_PLATFORM}" in
