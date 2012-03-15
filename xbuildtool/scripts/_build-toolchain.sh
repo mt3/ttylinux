@@ -53,6 +53,7 @@
 #
 # CHANGE LOG
 #
+#	14mar12	drj	Made a better ncpus setting.
 #	24feb12	drj	Remove <path>/.. from CROSS_TOOL_DIR.
 #	19feb12	drj	Added text manifest of tool chain components.
 #	10feb12	drj	Added the making of GCC libraries.
@@ -772,7 +773,7 @@ export STRIP=""
 # any are found then use the number 1.
 #
 ncpus=${ncpus:-1}
-[[ -z "$(sed s/[0-9]//g <<<${ncpus})" ]] && ncpus=1
+[[ -z "${ncpus//[0-9]}" ]] && ncpus=1
 
 # Setup the bin-link in PATH
 #

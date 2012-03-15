@@ -34,6 +34,7 @@
 #
 # CHANGE LOG
 #
+#	14mar12	drj	Added ttylinux beagle_bone cross-tool chain.
 #	13feb12	drj	Project reorganization.
 #	20feb11	drj	Finished miscellaneous changes for the first release.
 #	01jan11	drj	Re-wrote ttylinux cross-tools Makefile for xbuildtool.
@@ -82,6 +83,7 @@ help:
 	@echo ""
 	@echo "Make Commands                    ttylinux Cross-tool Chain"
 	@echo "-----------------------          -------------------------"
+	@echo "make armv7-2.14-gnueabi ........ beagle_bone (linux-3.3.0)"
 	@echo "make mipsel-uclibc ............. wrtu54g_tm  (linux-2.6.36.4)"
 	@echo "make powerpc-2.13-gnu .......... mac_g4      (linux-2.6.38.1)"
 	@echo "make i486-2.9-gnu .............. pc_i486     (linux-2.6.34.6)"
@@ -97,6 +99,11 @@ clean:	xbt-build-config.sh
 
 dload:	xbt-build-config.sh
 	@scripts/_build-toolchain.sh "download"
+
+armv7-2.14-gnueabi:
+	rm -f xbt-build-config.sh
+	cp config/ttyl-beagle_bone.cfg xbt-build-config.sh
+	./scripts/_build-toolchain.sh
 
 mipsel-uclibc:
 	rm -f xbt-build-config.sh
