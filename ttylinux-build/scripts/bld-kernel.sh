@@ -29,6 +29,7 @@
 #
 # CHANGE LOG
 #
+#	16mar12	drj	Added more elaborate logging of comments and commands.
 #	08mar12	drj	Better setting njobs.
 #	18feb12	drj	Rewrite for build process reorganization.
 #	11feb12	drj	Avoid patching a user-custom ttylinux kernel.
@@ -67,6 +68,12 @@ kernel_clean() {
 
 local kver=${TTYLINUX_USER_KERNEL:-${XBT_LINUX_VER##*-}}
 
+ttylinux_build_comment ""
+ttylinux_build_comment "remove build/kpkgs"
+ttylinux_build_comment "remove build/kroot"
+ttylinux_build_comment "remove build/linux-<vers>"
+ttylinux_build_comment ""
+
 rm --force --recursive "${TTYLINUX_BUILD_DIR}"/kpkgs/*
 rm --force --recursive "${TTYLINUX_BUILD_DIR}"/kroot/*
 rm --force --recursive "${TTYLINUX_BUILD_DIR}"/linux-${kver}*/
@@ -96,6 +103,10 @@ if [[ -n "${TTYLINUX_USER_KERNEL:-}" ]]; then
 	kcfg="${srcd}/kernel-${TTYLINUX_USER_KERNEL}.cfg"
 fi
 
+ttylinux_build_comment ""
+ttylinux_build_comment "kernel source"
+ttylinux_build_comment "=> ${srcd}/linux-${kver}.tar.bz2"
+
 # Look for the linux kernel tarball.
 #
 if [[ ! -f "${srcd}/linux-${kver}.tar.bz2" ]]; then
@@ -103,6 +114,10 @@ if [[ ! -f "${srcd}/linux-${kver}.tar.bz2" ]]; then
 	echo "=> ${srcd}/linux-${kver}.tar.bz2" >&2
 	exit 1
 fi
+
+ttylinux_build_comment ""
+ttylinux_build_comment "kernel config"
+ttylinux_build_comment "=> ${kcfg}"
 
 # Look for the linux kernel configuration file.
 #
@@ -116,9 +131,11 @@ _modules=$(set +u; source ${kcfg}; echo "${CONFIG_MODULES}")
 [[ x"${_modules}" == x"y" ]] && K_MODULES="yes"
 unset _modules
 if [[ "${K_MODULES}" == "yes" ]]; then
-	echo "i> ##### This kernel configuration has modules."
+	ttylinux_build_comment ""
+	ttylinux_build_comment "This kernel configuration has modules."
 else
-	echo "i> ##### This kernel configuration has NO modules."
+	ttylinux_build_comment ""
+	ttylinux_build_comment "This kernel configuration has NO modules."
 fi
 
 # Cleanup any pervious, left-over build results.
@@ -128,15 +145,14 @@ kernel_clean
 # Uncompress, untarr then remove linux-${kver}.tar.bz2 and put the kernel
 # configuration file in place.
 #
-trap kernel_clean EXIT
+# trap kernel_clean EXIT
 #
-rm --force --recursive linux-${kver}*
-cp "${srcd}/linux-${kver}.tar.bz2" "linux-${kver}.tar.bz2"
-bunzip2 --force "linux-${kver}.tar.bz2"
-tar --extract --file="linux-${kver}.tar"
-rm --force "linux-${kver}.tar"
-#
-cp "${kcfg}" "linux-${kver}/.config"
+ttylinux_build_comment ""
+ttylinux_build_command "cp ${srcd}/linux-${kver}.tar.bz2 linux-${kver}.tar.bz2"
+ttylinux_build_command "bunzip2 --force linux-${kver}.tar.bz2"
+ttylinux_build_command "tar --extract --file=linux-${kver}.tar"
+ttylinux_build_command "rm --force linux-${kver}.tar"
+ttylinux_build_command "cp ${kcfg} linux-${kver}/.config"
 #
 trap - EXIT
 
@@ -160,7 +176,8 @@ trap kernel_clean EXIT
 # Agressively set njobs: set njobs to 2 if ${ncpus} is unset or has non-digit
 # characters.
 #
-[[ -z "${ncpus//[0-9]}" ]] && njobs=$((${ncpus:-1} + 1)) || njobs=2
+bitch=${ncpus:-1}
+[[ -z "${bitch//[0-9]}" ]] && njobs=$((${bitch:-1} + 1)) || njobs=2
 
 # Set the right kernel make target.
 case "${TTYLINUX_PLATFORM}" in
@@ -172,21 +189,43 @@ esac
 
 cd "linux-${kver}"
 
-# Do some kernel source code fix-ups, if needed.  If this is not a user-custom
-# ttylinux kernel.
+# If this is not a user-custom ttylinux kernel, then do some kernel source code
+# fix-ups, if needed.
 #
 if [[ -z "${TTYLINUX_USER_KERNEL:-}" ]]; then
-	sed --in-place scripts/unifdef.c --expression="s/getline/uc_&/"
-	sed --in-place scripts/mod/sumversion.c \
-		--expression="s|<string.h>| <limits.h>\n#include <string.h>|"
+	if [[ -f scripts/unifdef.c ]]; then
+		# This is for older kernels; it is harmless otherwise.
+		_cmd="sed -e \"s/getline/uc_&/\" -i scripts/unifdef.c"
+		ttylinux_build_comment ""
+		ttylinux_build_command "${_cmd}"
+		unset _cmd
+	fi
+	if [[ -f scripts/mod/sumversion.c ]]; then
+		# This is for older kernels; it is harmless otherwise.
+		_old="<string.h>"
+		_new="<limits.h>\n#include <string.h>"
+		_cmd="sed -e \"s|${_old}|${_new}|\" -i scripts/mod/sumversion.c"
+		ttylinux_build_comment ""
+		ttylinux_build_command "${_cmd}"
+		unset _old
+		unset _new
+		unset _cmd
+	fi
 	_tarFile="${TTYLINUX_PLATFORM_DIR}/kernel-${kver}-add_in.tar.bz2"
 	if [[ -f ${_tarFile} ]]; then
-		echo "Adding-in kernel-${kver}-add_in.tar.bz2"
-		tar --extract --file="${_tarFile}"
+		_cmd="tar --extract --file=${_tarFile}"
+		ttylinux_build_comment ""
+		ttylinux_build_comment "Adding-in kernel-${kver}-add_in.tar.bz2"
+		ttylinux_build_command "${_cmd}"
+		unset _cmd
 	fi
 	unset _tarFile
 	for p in ${TTYLINUX_PLATFORM_DIR}/kernel-${kver}-??.patch; do
-		if [[ -f "${p}" ]]; then patch -p1 <${p}; fi
+		if [[ -f "${p}" ]]; then
+			_cmd="patch -p1 <${p}"
+			ttylinux_build_command "${_cmd}"
+			unset _cmd
+		fi
 	done
 fi
 
@@ -195,23 +234,29 @@ fi
 # later.
 #
 if [[ "${target}" == "uImage" ]]; then
-	_extraPath="${TTYLINUX_BOOTLOADER_DIR}/uboot"
+	_xtraPath="${TTYLINUX_BOOTLOADER_DIR}/uboot"
 else
-	_extraPath=""
+	_xtraPath=""
 fi
 source "${TTYLINUX_XTOOL_DIR}/_xbt_env_set"
-PATH="${_extraPath}:${XBT_BIN_PATH}:${PATH}" make -j ${njobs} ${target} \
+_cmd="PATH=\"${_xtraPath}:${XBT_BIN_PATH}:${PATH}\" make -j ${njobs} ${target} \
 	V=1 \
 	ARCH=${XBT_LINUX_ARCH} \
-	CROSS_COMPILE=${XBT_TARGET}-
+	CROSS_COMPILE=${XBT_TARGET}-"
+ttylinux_build_comment ""
+ttylinux_build_command "${_cmd}"
+unset _cmd
 if [[ "${K_MODULES}" == "yes" ]]; then
-	PATH="${XBT_BIN_PATH}:${PATH}" make -j ${njobs} modules \
+	_cmd="PATH=\"${XBT_BIN_PATH}:${PATH}\" make -j ${njobs} modules \
 		V=1 \
 		ARCH=${XBT_LINUX_ARCH} \
-		CROSS_COMPILE=${XBT_TARGET}-
+		CROSS_COMPILE=${XBT_TARGET}-"
+	ttylinux_build_comment ""
+	ttylinux_build_command "${_cmd}"
+	unset _cmd
 fi
 source "${TTYLINUX_XTOOL_DIR}/_xbt_env_clr"
-unset _extraPath
+unset _xtraPath
 
 cd ..
 
@@ -235,29 +280,16 @@ echo -n "f.m__0.p." >&${CONSOLE_FD}
 
 # Setup kernel directories.
 #
-mkdir "kroot/boot"
-mkdir "kroot/etc"
-mkdir "kroot/lib"
-mkdir "kroot/lib/modules"
+ttylinux_build_command "mkdir kroot/boot"
+ttylinux_build_command "mkdir kroot/etc"
+ttylinux_build_command "mkdir kroot/lib"
+ttylinux_build_command "mkdir kroot/lib/modules"
 
 # $ make vmlinux
 # $ mipsel-linux-strip vmlinux
 # $ echo "root=/dev/ram0 ramdisk_size=8192" >kernel.params
 # $ mipsel-linux-objcopy --add-section kernparm=kernel.params vmlinux
 # $ mipsel-linux-objcopy --add-section initrd=initrd.gz vmlinux
-
-# echo ""
-# echo "linux-${kver}"
-# ls -l "linux-${kver}"
-# echo ""
-# echo "linux-${kver}/arch/${XBT_LINUX_ARCH}"
-# ls -l "linux-${kver}/arch/${XBT_LINUX_ARCH}"
-# echo ""
-# echo "linux-${kver}/arch/${XBT_LINUX_ARCH}/boot"
-# ls -l "linux-${kver}/arch/${XBT_LINUX_ARCH}/boot"
-# echo ""
-# echo "linux-${kver}/arch/${XBT_LINUX_ARCH}/boot/compressed"
-# ls -l "linux-${kver}/arch/${XBT_LINUX_ARCH}/boot/compressed"
 
 _vmlinuz="arch/${XBT_LINUX_ARCH}/boot/"
 case "${TTYLINUX_PLATFORM}" in
@@ -270,9 +302,15 @@ esac
 # Get the kernel and its system map.
 #
 bDir="kroot/boot"
-cp "linux-${kver}/System.map"  "${bDir}/System.map"
-cp "linux-${kver}/vmlinux"     "${bDir}/vmlinux"
-cp "linux-${kver}/${_vmlinuz}" "${bDir}/$(basename ${_vmlinuz})"
+_cmd1="cp \"linux-${kver}/System.map\"  \"${bDir}/System.map\""
+_cmd2="cp \"linux-${kver}/vmlinux\"     \"${bDir}/vmlinux\""
+_cmd3="cp \"linux-${kver}/${_vmlinuz}\" \"${bDir}/$(basename ${_vmlinuz})\""
+ttylinux_build_command "${_cmd1}"
+ttylinux_build_command "${_cmd2}"
+ttylinux_build_command "${_cmd3}"
+unset _cmd1
+unset _cmd2
+unset _cmd3
 unset bDir
 
 if [[ "${K_MODULES}" == "yes" ]]; then
@@ -282,29 +320,44 @@ if [[ "${K_MODULES}" == "yes" ]]; then
 
 	# Install the kernel modules into ${TTYLINUX_BUILD_DIR}/kroot
 	#
+	ttylinux_build_comment "Install the kernel modules into:"
+	ttylinux_build_comment "=> ${TTYLINUX_BUILD_DIR}/kroot"
 	cd "linux-${kver}"
 	source "${TTYLINUX_XTOOL_DIR}/_xbt_env_set"
-	PATH="${XBT_BIN_PATH}:${PATH}" make -j ${njobs} modules_install \
+	_cmd="PATH=\"${XBT_BIN_PATH}:${PATH}\" make -j ${njobs} modules_install\
 		V=1 \
 		ARCH=${XBT_LINUX_ARCH} \
 		CROSS_COMPILE=${XBT_TARGET}- \
-		INSTALL_MOD_PATH=${bDir}
+		INSTALL_MOD_PATH=${bDir}"
+	ttylinux_build_command "${_cmd}"
+	unset _cmd
 	source "${TTYLINUX_XTOOL_DIR}/_xbt_env_clr"
 	cd ..
 
 	# Scrub the modules directory.
 	#
+	ttylinux_build_comment "Scrub the modules directory; remove these:"
+	ttylinux_build_comment "=> ${bDir}/lib/modules/${kver}/build"
+	ttylinux_build_comment "=> ${bDir}/lib/modules/${kver}/source"
 	rm --force "${bDir}/lib/modules/${kver}/build"
 	rm --force "${bDir}/lib/modules/${kver}/source"
 
-	# Make the binary package in ${TTYLINUX_BUILD_DIR}/kpkgs
+	# Make the kernel modules binary package in ${TTYLINUX_BUILD_DIR}/kpkgs
 	#
 	uTarBall="${pDir}/kmodules-${kver}-${TTYLINUX_CPU}.tar"
 	cTarBall="${pDir}/kmodules-${kver}-${TTYLINUX_CPU}.tbz"
-	tar --directory ${bDir} --create --file="${uTarBall}" lib
-	bzip2 --force "${uTarBall}"
-	mv --force "${uTarBall}.bz2" "${cTarBall}"
-	cp "${cTarBall}" "${TTYLINUX_PKGBIN_DIR}"
+	_cmd1="tar --directory ${bDir} --create --file=\"${uTarBall}\" lib"
+	_cmd2="bzip2 --force \"${uTarBall}\""
+	_cmd3="mv --force \"${uTarBall}.bz2\" \"${cTarBall}\""
+	_cmd4="cp \"${cTarBall}\" \"${TTYLINUX_PKGBIN_DIR}\""
+	ttylinux_build_command "${_cmd1}"
+	ttylinux_build_command "${_cmd2}"
+	ttylinux_build_command "${_cmd3}"
+	ttylinux_build_command "${_cmd4}"
+	unset _cmd1
+	unset _cmd2
+	unset _cmd3
+	unset _cmd4
 	unset uTarBall
 	unset cTarBall
 

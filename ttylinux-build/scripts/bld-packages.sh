@@ -29,6 +29,8 @@
 #
 # CHANGE LOG
 #
+#	16mar12	drj	Changed the package done flags' location.
+#	16mar12	drj	Even better setting NJOBS.
 #	08mar12	drj	Better setting NJOBS.
 #	16feb12	drj	Rewrite for build process reorganization.
 #	22jan12	drj	Minor fussing.
@@ -246,7 +248,9 @@ sleep 1 # For detecting files newer than INSTALL_STAMP
 # reports an error in PKG_STATUS.
 #
 PKG_STATUS=""
-[[ -z "${ncpus//[0-9]}" ]] && NJOBS=$((${ncpus:-1} + 1)) || NJOBS=2
+bitch=${ncpus:-1}
+[[ -z "${bitch//[0-9]}" ]] && NJOBS=$((${bitch:-1} + 1)) || NJOBS=2
+unset bitch
 echo -n "b." >&${CONSOLE_FD}
 pkg_patch     $1
 pkg_configure $1
@@ -524,7 +528,7 @@ T1P=${SECONDS}
 
 for p in ${TTYLINUX_PACKAGE[@]}; do
 
-	[[ -n "${ZIPP}" && -f "${TTYLINUX_VAR_DIR}/log/${p}.done" ]] && continue
+	[[ -n "${ZIPP}" && -f "${TTYLINUX_VAR_DIR}/run/done.${p}" ]] && continue
 
 	t1=${SECONDS}
 
@@ -554,8 +558,7 @@ for p in ${TTYLINUX_PACKAGE[@]}; do
 		exit 1
 	fi
 
-	rm --force "${TTYLINUX_VAR_DIR}/log/${p}.done"
-	>"${TTYLINUX_VAR_DIR}/log/${p}.done"
+	touch "${TTYLINUX_VAR_DIR}/run/done.${p}"
 
 	echo -n " ... DONE ["
 	t2=${SECONDS}

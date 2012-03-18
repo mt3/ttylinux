@@ -1,0 +1,160 @@
+How to Help ttylinux
+Copyright (C) 2012 Douglas Jerome <douglas@ttylinux.org>
+March 17, 2012
+
+
+17mar12	drj	Finished and baselined first version for ttylinux.
+
+
+                ------------------------------------------------
+
+
+How to Help ttylinux
+
+-- Document Outline --
+1. Introduction
+2. Background (READ THIS SECTION)
+   2.1. Growth and Change
+   2.2. Bug Fixes
+3. Questions, Requests and Suggestions
+4. Run-time Problems
+5. Build-time Problems
+6. Major Updates
+
+
+===============
+1. Introduction
+===============
+
+This short document describes how to report bugs, make requests and suggestions,
+and otherwise how to help ttylinux.
+
+
+=================================
+2. Background (READ THIS SECTION)
+=================================
+
+ttylinux is an exercise in minimalism.
+
+ttylinux is very small.  The goal is to keep ttylinux simple, small, and
+hopefully extensible.  ttylinux development has a clear distinction between
+growth and change (do not want) and bug fixes (do want).
+
+----------------------
+2.1. Growth and Change
+----------------------
+
+Most software projects, as does the ttylinux project, have a goal to make their
+product better and keep it as up-to-date with the latest methods and techniques
+as possible.  Usually there is a corresponding expectation of growth and
+increasing complexity in their code base and end product.  Each project has its
+own balance of up-to-date features, size and complexity.  Simplicity and small
+size are ttylinux goals.  For ttylinux to stay small, requests and suggestions
+that are separate from bug fixes for improvements and things to make it better
+are very critically analyzed: what things are better and what is the cost in
+size.
+
+=> Kernel configuration updates for improving capabilities are always welcome.
+
+=> New package config directories, for new packages in pkg-cfg/, with their
+   build scripts ARE probably WELCOME, as they do not necessarily need to be
+   included in the standard released binary distributions.
+
+--------------
+2.2. Bug Fixes
+--------------
+
+A *problem* is different from a *fix*; state what the problem is, even if you
+have thought of a fix.  If the box flew off the table then say "the box flies
+off the table", do not say "you need to nail the box to the table", as the
+right fix may be to balance some moving part in the box.
+
+=> Kernel configuration fixes are always welcome.
+
+=> Package configuration fixes are always welcome.
+
+
+======================================
+3. Questions, Requests and Suggestions
+======================================
+
+If you have some general question about ttylinux then email the ttylinux mail
+list.
+
+If you have an idea for a kernel configuration improvement or existing package
+configuration improvement, then you should send email describing the change to
+the ttylinux mail list.
+
+First, read section 2 of this document, then email your thoughts to the
+ttylinux mail list.
+     ttylinux@googlegroups.com
+     http://groups.google.com/group/ttylinux/
+
+
+====================
+4. Run-time Problems
+====================
+
+If you find a problem while using a ttylinux distribution, collect this
+information:
+	-- ttylinux version number
+	-- ttylinux platform and CPU (pc_i486, mac_g4, etc.)
+	-- problem statement: describe what is the symptom
+	-- (option) proposed fix: describe what you think is the fix
+	-- (option) software patch, if less than 25 kbytes ** (see below)
+
+Email this information to the ttylinux mail list:
+     ttylinux@googlegroups.com
+     http://groups.google.com/group/ttylinux/
+
+** - Not everyone has high-speed Internet access; some folks may have no more
+     than 5 KB/sec download.  If you have a large patch then don't post it to
+     the mail list, just say in your post that you have a large patch and let
+     me arrange to get it from you.
+
+
+======================
+5. Build-time Problems
+======================
+
+Do not ask me to pull from your git repo unless we have arranged to work
+together on something.  Bug fixes should be given as one or more small patch in
+the mail list, if at all feasible.
+
+If you find a problem while building ttylinux, collect this information:
+	-- ttylinux version number in the Makefile, before you changed it
+	-- COMPRESSED platform config file: ttylinux-config.sh, if changed
+	-- kernel config file, if applicable and you changed it ** (see below)
+	-- problem statement: describe what is the symptom
+	-- (option) proposed fix: describe what you think is the fix
+	-- (option) software patch, if less than 25 kbytes ** (see below)
+
+Email this information to the ttylinux mail list:
+     ttylinux@googlegroups.com
+     http://groups.google.com/group/ttylinux/
+
+** - Not everyone has high-speed Internet access; some folks may have no more
+     than 5 KB/sec download.  If you have an applicable kernel config file or
+     a large patch then don't post it to the mail list, just say in your post
+     that you have such and let me arrange to get it from you.
+
+For xbuildtool problems, do something similar to what is described in this
+section.
+
+
+================
+6. Major Updates
+================
+
+If you have something like:
+
+=> new build package for the pkg-cfg/ directory
+=> new platform for the config/ directory
+=> new bootloader for the bootloader/ directory
+
+then email a description to the ttylinux mail list:
+     ttylinux@googlegroups.com
+     http://groups.google.com/group/ttylinux/
+
+
+[eof]

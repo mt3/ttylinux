@@ -98,7 +98,7 @@ local _t4=""
 
 echo "i> Looking for ttylinux BeagleBone SD card."
 
-set +o errexit # # Do not exit on command error.  Let mount and umount fail.
+set +o errexit ; # Do not exit on command error.  Let mount and umount fail.
 for (( bd=0 ; ${bd} < 8 ; bd=$((${bd} + 1)) )); do
 	_t1=$(blkid -s TYPE /dev/mmcblk${bd}p1)
 	_t2=$(blkid -s TYPE /dev/mmcblk${bd}p2)
@@ -116,7 +116,7 @@ for (( bd=0 ; ${bd} < 8 ; bd=$((${bd} + 1)) )); do
 	sdCardDev="/dev/mmcblk${bd}"
 	bd=8
 done
-set -o errexit # # Exit on command error.
+set -o errexit ; # Exit on command error.
 
 if [[ -z "${sdCardDev}" ]]; then
 	echo "E> Cannot find an appropriate SD card paritition."
@@ -154,7 +154,7 @@ cp sdcard/boot/uImage     ${TTYLINUX_MNT_DIR}/uImage
 cp sdcard/boot/vmlinux    ${TTYLINUX_MNT_DIR}/vmlinux
 cp sdcard/boot/System.map ${TTYLINUX_MNT_DIR}/System.map
 echo "DONE"
-echo -n "File listing:"
+echo "File listing:"
 ls --color -hil ${TTYLINUX_MNT_DIR} | sort | grep -v "^ *$"
 
 echo -n "=> Unmounting the partition ................ "
@@ -164,7 +164,7 @@ echo "DONE"
 # Setup File Systems Partitions
 
 echo ""
-echo "i> Setup ROOTFS partition [${sdCardDev}p2]."
+echo "i> Setup ROOTFS partition [${sdCardDev}p2] (be patient)."
 
 echo -n "=> Formatting partition [ext4] ............. "
 mkfs.ext4 -j -L rootfs "${sdCardDev}p2" >/dev/null 2>&1
@@ -177,7 +177,7 @@ echo "DONE"
 echo ""
 echo "i> Setup VARFS partition [${sdCardDev}p3]."
 
-echo -n "=> Formatting partition [ext4] ........... "
+echo -n "=> Formatting partition [ext4] ............. "
 mkfs.ext4 -j -L varfs "${sdCardDev}p3" >/dev/null 2>&1
 echo "DONE"
 

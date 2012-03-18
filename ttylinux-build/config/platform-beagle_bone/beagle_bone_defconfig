@@ -2,7 +2,7 @@
 
 #
 # beagle_bone
-# Wed Feb 22 20:11:01 MST 2012
+# Sat Mar 17 19:35:50 MST 2012
 #
 
 TTYLINUX_NAME=
@@ -12,7 +12,7 @@ TTYLINUX_VERSION=
 # Platform, cross-tool, and CFLAGS.  Be carefull with changes.
 #
 TTYLINUX_PLATFORM=beagle_bone
-TTYLINUX_XBT_DIR="../cross-tools-2.14-3.3.0"
+TTYLINUX_XBT_DIR="../cross-tools-2.14-3.1.0"
 TTYLINUX_XBT="armv7-generic-linux-gnueabi"
 TTYLINUX_CFLAGS="-mcpu=cortex-a8"
 
@@ -64,7 +64,7 @@ TTYLINUX_PACKAGE[i++]="mpfr-2.4.2"
 TTYLINUX_PACKAGE[i++]="bash-4.2"
 TTYLINUX_PACKAGE[i++]="busybox-1.19.3"
 TTYLINUX_PACKAGE[i++]="e2fsprogs-1.42"
-TTYLINUX_PACKAGE[i++]="iptables-1.4.12"
+# TTYLINUX_PACKAGE[i++]="iptables-1.4.12"
 # TTYLINUX_PACKAGE[i++]="lilo-23.2"
 TTYLINUX_PACKAGE[i++]="module-init-tools-3.16"
 # TTYLINUX_PACKAGE[i++]="ntfs-3g_ntfsprogs-2012.1.15"

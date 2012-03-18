@@ -1,17 +1,41 @@
 
-Wed Mar 14 20:37:11 MST 2012
-----------------------------
+Sat Mar 17 19:38:23 MST 2012
+============================
 
-Currently, ttylinux uses the kernel tree available at
+Currently, ttylinux uses a TI kernel.
 
-https://github.com/hvaibhav/am335x-linux
+File: am335x-evm-sdk-src-05.03.03.00.tar.gz
+Page: http://software-dl.ti.com/dsps/dsps_public_sw/am_bu/sdk/AM335xSDK/latest/index_FDS.html
+Direct link: http://software-dl.ti.com/dsps/dsps_public_sw/am_bu/sdk/AM335xSDK/latest/exports/am335x-evm-sdk-src-05.03.03.00.tar.gz
 
-This kernel tree is actively developed and now may have changes that do not
-work with the current ttylinux BeagleBone kernel configuration file.  The last
-commit to this tree at the time this kernel tree was gotten for ttylinux was
-'521b08edffc6ea27144cc7d1787c0b9528470d41'.
+The file "am335x-evm-sdk-src-05.03.03.00.tar.gz" is composed of these two:
+=> linux-3.1.0-psp04.06.00.03.sdk.tar.gz
+=> u-boot-2011.09-psp04.06.00.03.tar.gz
 
-Get the kernel source tree and put it in the xbuildtool/pkg-src directory, then
-make the beagle_bone cross-tool chain; after that, read the
-How_To_Build_ttylinux.txt file.
+The tar file linux-3.1.0-psp04.06.00.03.sdk.tar.gz is un-tarred and the
+top-level directory renamed from "linux-3.1.0-psp04.06.00.03" to "linux-3.1.0",
+and then tarred-up: tar cjf linux-3.1.0.tar.bz2 linux-3.1.0/  The new
+linux-3.1.0.tar.bz2 is used by xbuildtools and the ttylinux build system to
+make the current BeagleBone ttylinux.
 
+xbuildtools
+-----------
+
+Put the linux-3.1.0.tar.bz2 tar file in the xbuildtool/pkg-src/ directory and
+make the BeagleBone ttylinux cross-tool chain, in the xbuildtool/ directory,
+with "make setup" and then "make armv7-2.14-gnueabi".  Read these files to
+learn how to build a cross-tool chain:
+=> xbuildtool/xbuildtool.guide.txt
+=> xbuildtool/README
+=> ttylinux-build/How_To_Build_ttylinux.txt
+
+ttylinux-build
+--------------
+
+Go into the ttylinux-build/ directory and read How_To_Build_ttylinux.txt
+
+~~~~~~~~~~~~~~~~~~~~
+
+Notes on the Run-time Environment
+ o Use "modprobe g_mass_storage file=/dev/mmcblk0p1" so the USB host can browse
+   the BeagleBone SDCard boot partition.

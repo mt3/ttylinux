@@ -29,6 +29,8 @@
 #
 # CHANGE LOG
 #
+#	15mar12	drj	Changed to not need User_Guide.html and User_Guide.pdf.
+#	15mar12	drj	Fixed for BeagleBone platform.
 #	18feb12	drj	Rewrite for build process reorganization.
 #	02feb12	drj	Only make the distribution directory, not ISO image.
 #	02feb12	drj	Removed BeagleBoard-xM, IntegratorCP, and MaltaLV.
@@ -69,23 +71,22 @@
 
 bbone_dir_make() {
 
-local kver="${XBT_LINUX_VER#*-}"
-local kname="kernel-${kver}-${TTYLINUX_CLASS}-${TTYLINUX_CPU}"
-local kcfg="${TTYLINUX_PLATFORM_DIR}/${kname}.cfg"
+local kver="${TTYLINUX_USER_KERNEL:-${XBT_LINUX_VER##*-}}"
+local kcfg="${TTYLINUX_PLATFORM_DIR}/kernel-${kver}.cfg"
+local rdSize
 
-# If TTYLINUX_KERNEL is set, as specified in the ttylinux-config.sh file,
+# If TTYLINUX_USER_KERNEL is set, as specified in the ttylinux-config.sh file,
 # then there is a non-standard (user custom) ttylinux kernel to build, in which
 # case the linux source distribution and kernel configuration file is supposed
 # to be in the ttylinux site/platform-* directory.
 #
-if [[ -n "${TTYLINUX_KERNEL}" ]]; then
-	srcd="${TTYLINUX_DIR}/site/$(basename ${TTYLINUX_PLATFORM_DIR})"
-	kver="${TTYLINUX_KERNEL}"
-	kcfg="${srcd}/kernel-${TTYLINUX_KERNEL}.cfg"
+if [[ -n "${TTYLINUX_USER_KERNEL:-}" ]]; then
+	srcd="${TTYLINUX_DIR}/site/platform-${TTYLINUX_PLATFORM})"
+	kcfg="${srcd}/kernel-${TTYLINUX_USER_KERNEL}.cfg"
 	unset srcd
 fi
 
-pushd "${TTYLINUX_CONFIG_DIR}" >/dev/null 2>&1
+pushd "${TTYLINUX_BUILD_DIR}" >/dev/null 2>&1
 
 echo -n "i> Recreating boot staging directory ................. "
 rm --force --recursive "sdcard/"
@@ -103,15 +104,15 @@ echo "SOURCE_MEDIA=\"UNKNOWN\""               >>sdcard/LABEL
 echo "SOURCE_VERSION=\"${TTYLINUX_VERSION}\"" >>sdcard/LABEL
 echo "SOURCE_ARCH=\"${TTYLINUX_CPU}\""        >>sdcard/LABEL
 echo "SOURCE_KVER=\"${kver}\""                >>sdcard/LABEL
-cp ${TTYLINUX_DOC_DIR}/AUTHORS       sdcard/AUTHORS
-cp ${TTYLINUX_DOC_DIR}/COPYING       sdcard/COPYING
-cp bootloader-uboot/MLO              sdcard/boot/MLO
-cp bootloader-uboot/u-boot.bin       sdcard/boot/u-boot.img
-cp ${TTYLINUX_IMG_NAME}              sdcard/boot/filesys
-cp kroot/boot/System.map             sdcard/boot/System.map
-cp kroot/boot/uImage                 sdcard/boot/uImage
-cp kroot/boot/vmlinux                sdcard/boot/vmlinux
-cp ${TTYLINUX_PLATFORM_DIR}/uEnv.txt sdcard/boot/uEnv.txt
+cp ${TTYLINUX_DOC_DIR}/AUTHORS                 sdcard/AUTHORS
+cp ${TTYLINUX_DOC_DIR}/COPYING                 sdcard/COPYING
+cp ${TTYLINUX_BOOTLOADER_DIR}/uboot/MLO        sdcard/boot/MLO
+cp ${TTYLINUX_BOOTLOADER_DIR}/uboot/u-boot.bin sdcard/boot/u-boot.img
+cp ${TTYLINUX_IMG_NAME}                        sdcard/boot/filesys
+cp kroot/boot/System.map                       sdcard/boot/System.map
+cp kroot/boot/uImage                           sdcard/boot/uImage
+cp kroot/boot/vmlinux                          sdcard/boot/vmlinux
+cp ${TTYLINUX_PLATFORM_DIR}/uEnv.txt           sdcard/boot/uEnv.txt
 chmod 644 sdcard/AUTHORS
 chmod 644 sdcard/COPYING
 chmod 644 sdcard/LABEL
@@ -125,18 +126,31 @@ echo "DONE"
 
 echo -n "i> Copying configuration data and tools .............. "
 cp ${kcfg} sdcard/config/kernel-${kver}.cfg
-chmod 644 sdcard/config/kernel-${kver}.cfg
-for f in ${TTYLINUX_PLATFORM_DIR}/*-${TTYLINUX_CLASS}-${TTYLINUX_CPU}.sh; do
-	[[ -r "${f}" ]] && cp ${f} sdcard/ && chmod 755 sdcard/${f} || true
+for f in ${TTYLINUX_PLATFORM_DIR}/*.sh; do
+	[[ -r "${f}" ]] && cp ${f} sdcard/ || true
 done
+chmod 644 sdcard/config/kernel-${kver}.cfg
 echo "DONE"
 
 echo -n "i> Copying documentation files ....................... "
-_chgLog="ChangeLog-${TTYLINUX_CLASS}-${TTYLINUX_CPU}"
-cp ${TTYLINUX_DOC_DIR}/${_chgLog}      sdcard/doc/
-cp ${TTYLINUX_DOC_DIR}/User_Guide.html sdcard/doc/
-cp ${TTYLINUX_DOC_DIR}/User_Guide.pdf  sdcard/doc/
-cp ${TTYLINUX_DOC_DIR}/User_Guide.tex  sdcard/doc/
+_chgLog="ChangeLog-${TTYLINUX_PLATFORM}"
+cp ${TTYLINUX_DOC_DIR}/${_chgLog} sdcard/doc/
+if [[ -f ${TTYLINUX_DOC_DIR}/User_Guide.html ]]; then
+	cp ${TTYLINUX_DOC_DIR}/User_Guide.html sdcard/doc/
+else
+	echo ""
+	echo -en "${TEXT_BYELLOW}"
+	echo -n  "WARNING"
+	echo -e  "${TEXT_NORM} no User_Guide.html"
+fi
+if [[ -f ${TTYLINUX_DOC_DIR}/User_Guide.pdf ]]; then
+	cp ${TTYLINUX_DOC_DIR}/User_Guide.pdf sdcard/doc/
+else
+	echo -en "${TEXT_BYELLOW}"
+	echo -n  "WARNING"
+	echo -e  "${TEXT_NORM} no User_Guide.pdf"
+fi
+cp ${TTYLINUX_DOC_DIR}/User_Guide.tex sdcard/doc/
 unset _chgLog
 chmod 644 sdcard/doc/*
 echo "DONE"
@@ -163,7 +177,7 @@ local kver="${XBT_LINUX_VER#*-}"
 local kcfg="${TTYLINUX_PLATFORM_DIR}/kernel-${kver}.cfg"
 local rdSize=$((${TTYLINUX_RAMDISK_SIZE}*1024))
 
-# If TTYLINUX_KERNEL is set, as specified in the ttylinux-config.sh file,
+# If TTYLINUX_USER_KERNEL is set, as specified in the ttylinux-config.sh file,
 # then there is a non-standard (user custom) ttylinux kernel to build, in which
 # case the linux source distribution and kernel configuration file is supposed
 # to be in the ttylinux site/platform-* directory.
@@ -247,10 +261,23 @@ echo "DONE"
 
 echo -n "i> Copying documentation files to Boot CD ............ "
 _chgLog="ChangeLog-${TTYLINUX_PLATFORM}"
-cp ${TTYLINUX_DOC_DIR}/${_chgLog}      cdrom/doc/
-cp ${TTYLINUX_DOC_DIR}/User_Guide.html cdrom/doc/
-cp ${TTYLINUX_DOC_DIR}/User_Guide.pdf  cdrom/doc/
-cp ${TTYLINUX_DOC_DIR}/User_Guide.tex  cdrom/doc/
+cp ${TTYLINUX_DOC_DIR}/${_chgLog} cdrom/doc/
+if [[ -f ${TTYLINUX_DOC_DIR}/User_Guide.html ]]; then
+	cp ${TTYLINUX_DOC_DIR}/User_Guide.html sdcard/doc/
+else
+	echo ""
+	echo -en "${TEXT_BYELLOW}"
+	echo -n  "WARNING"
+	echo -e  "${TEXT_NORM} no User_Guide.html"
+fi
+if [[ -f ${TTYLINUX_DOC_DIR}/User_Guide.pdf ]]; then
+	cp ${TTYLINUX_DOC_DIR}/User_Guide.pdf sdcard/doc/
+else
+	echo -en "${TEXT_BYELLOW}"
+	echo -n  "WARNING"
+	echo -e  "${TEXT_NORM} no User_Guide.pdf"
+fi
+cp ${TTYLINUX_DOC_DIR}/User_Guide.tex cdrom/doc/
 unset _chgLog
 chmod 644 cdrom/doc/*
 echo "DONE"
@@ -276,7 +303,7 @@ local kver="${TTYLINUX_USER_KERNEL:-${XBT_LINUX_VER##*-}}"
 local kcfg="${TTYLINUX_PLATFORM_DIR}/kernel-${kver}.cfg"
 local rdSize
 
-# If TTYLINUX_KERNEL is set, as specified in the ttylinux-config.sh file,
+# If TTYLINUX_USER_KERNEL is set, as specified in the ttylinux-config.sh file,
 # then there is a non-standard (user custom) ttylinux kernel to build, in which
 # case the linux source distribution and kernel configuration file is supposed
 # to be in the ttylinux site/platform-* directory.
@@ -363,9 +390,22 @@ echo -n "i> Copying documentation files to Boot CD ............ "
 _chgLog="ChangeLog-${TTYLINUX_PLATFORM}"
 cp ${TTYLINUX_DOC_DIR}/${_chgLog}           cdrom/doc/
 cp ${TTYLINUX_DOC_DIR}/Flash_Disk_Howto.txt cdrom/doc/
-cp ${TTYLINUX_DOC_DIR}/User_Guide.html      cdrom/doc/
-cp ${TTYLINUX_DOC_DIR}/User_Guide.pdf       cdrom/doc/
-cp ${TTYLINUX_DOC_DIR}/User_Guide.tex       cdrom/doc/
+if [[ -f ${TTYLINUX_DOC_DIR}/User_Guide.html ]]; then
+	cp ${TTYLINUX_DOC_DIR}/User_Guide.html sdcard/doc/
+else
+	echo ""
+	echo -en "${TEXT_BYELLOW}"
+	echo -n  "WARNING"
+	echo -e  "${TEXT_NORM} no User_Guide.html"
+fi
+if [[ -f ${TTYLINUX_DOC_DIR}/User_Guide.pdf ]]; then
+	cp ${TTYLINUX_DOC_DIR}/User_Guide.pdf sdcard/doc/
+else
+	echo -en "${TEXT_BYELLOW}"
+	echo -n  "WARNING"
+	echo -e  "${TEXT_NORM} no User_Guide.pdf"
+fi
+cp ${TTYLINUX_DOC_DIR}/User_Guide.tex cdrom/doc/
 unset _chgLog
 chmod 644 cdrom/doc/*
 echo "DONE"
@@ -456,7 +496,7 @@ wrtu54g_dir_make() {
 local kver="${TTYLINUX_USER_KERNEL:-${XBT_LINUX_VER##*-}}"
 local kcfg="${TTYLINUX_PLATFORM_DIR}/kernel-${kver}.cfg"
 
-# If TTYLINUX_KERNEL is set, as specified in the ttylinux-config.sh file,
+# If TTYLINUX_USER_KERNEL is set, as specified in the ttylinux-config.sh file,
 # then there is a non-standard (user custom) ttylinux kernel to build, in which
 # case the linux source distribution and kernel configuration file is supposed
 # to be in the ttylinux site/platform-* directory.
@@ -554,10 +594,23 @@ echo "DONE"
 
 echo -n "i> Copying documentation files ....................... "
 _chgLog="ChangeLog-${TTYLINUX_PLATFORM}"
-cp ${TTYLINUX_DOC_DIR}/${_chgLog}      cdrom/doc/
-cp ${TTYLINUX_DOC_DIR}/User_Guide.html cdrom/doc/
-cp ${TTYLINUX_DOC_DIR}/User_Guide.pdf  cdrom/doc/
-cp ${TTYLINUX_DOC_DIR}/User_Guide.tex  cdrom/doc/
+cp ${TTYLINUX_DOC_DIR}/${_chgLog} cdrom/doc/
+if [[ -f ${TTYLINUX_DOC_DIR}/User_Guide.html ]]; then
+	cp ${TTYLINUX_DOC_DIR}/User_Guide.html sdcard/doc/
+else
+	echo ""
+	echo -en "${TEXT_BYELLOW}"
+	echo -n  "WARNING"
+	echo -e  "${TEXT_NORM} no User_Guide.html"
+fi
+if [[ -f ${TTYLINUX_DOC_DIR}/User_Guide.pdf ]]; then
+	cp ${TTYLINUX_DOC_DIR}/User_Guide.pdf sdcard/doc/
+else
+	echo -en "${TEXT_BYELLOW}"
+	echo -n  "WARNING"
+	echo -e  "${TEXT_NORM} no User_Guide.pdf"
+fi
+cp ${TTYLINUX_DOC_DIR}/User_Guide.tex cdrom/doc/
 unset _chgLog
 chmod 644 cdrom/doc/*
 echo "DONE"
@@ -599,12 +652,12 @@ build_config_setup || exit 1
 echo "##### START cross-building the distribution directory"
 echo ""
 
-[[ "${TTYLINUX_PLATFORM}" == "beagle_bone"   ]] && bbone_dir_make   || true
-[[ "${TTYLINUX_PLATFORM}" == "mac_g4"        ]] && mac_dir_make     || true
-[[ "${TTYLINUX_PLATFORM}" == "pc_i486"       ]] && pc_dir_make      || true
-[[ "${TTYLINUX_PLATFORM}" == "pc_i686"       ]] && pc_dir_make      || true
-[[ "${TTYLINUX_PLATFORM}" == "pc_x86_64"     ]] && pc_dir_make      || true
-[[ "${TTYLINUX_PLATFORM}" == "wrtu54g_tm"    ]] && wrtu54g_dir_make || true
+[[ "${TTYLINUX_PLATFORM}" == "beagle_bone" ]] && bbone_dir_make   || true
+[[ "${TTYLINUX_PLATFORM}" == "mac_g4"      ]] && mac_dir_make     || true
+[[ "${TTYLINUX_PLATFORM}" == "pc_i486"     ]] && pc_dir_make      || true
+[[ "${TTYLINUX_PLATFORM}" == "pc_i686"     ]] && pc_dir_make      || true
+[[ "${TTYLINUX_PLATFORM}" == "pc_x86_64"   ]] && pc_dir_make      || true
+[[ "${TTYLINUX_PLATFORM}" == "wrtu54g_tm"  ]] && wrtu54g_dir_make || true
 
 echo ""
 echo "##### DONE cross-building the distribution directory"

@@ -150,6 +150,8 @@ etc/sysconfig/sound-scripts/play
 etc/sysconfig/syslog
 home/ftpd/
 home/tftpd/
+home/user/README-problems.txt
+root/README-problems.txt
 root/g01-static-tests.sh
 root/g01-t01.sh
 root/g01-t02.sh

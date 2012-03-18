@@ -25,4 +25,6 @@
 
 mmc_root=/dev/mmcblk0p2 rw
 mmc_root_fs_type=ext4 rootwait
-bootargs=console=ttyO0,115200n8 root=/dev/mmcblk0p2 rootfstype=ext4 rw rootwait ip=off login=ttyO0
+bootargs=console=ttyO0,115200n8 root=/dev/mmcblk0p2 rootfstype=ext4 rw ip=off login=ttyO0
+
+# bootargs=console=ttyO0,115200n8 root=/dev/mmcblk0p2 rootfstype=ext4 rw rootwait ip=off login=ttyO0

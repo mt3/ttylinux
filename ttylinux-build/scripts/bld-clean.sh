@@ -29,6 +29,7 @@
 #
 # CHANGE LOG
 #
+#	16mar12	drj	Changed the package done flags' location.
 #	15feb12	drj	Rewrite for build process reorganization.
 #	22jan12	drj	Added "exit 0" at line 125; some had a patch for that.
 #	01mar11	drj	Added cleanup in bootloaders that use it.
@@ -129,6 +130,8 @@ if [[ $# -gt 0 ]]; then
 				rm --force ${_file}
 			fi
 		done
+		echo "   -> Removing var/run/done. build flags."
+		rm --force --recursive ${TTYLINUX_VAR_DIR}/run/done.*
 		unset _file
 	}
 fi
