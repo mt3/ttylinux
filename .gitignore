@@ -3,6 +3,9 @@
 *.[oa]
 *.swp
 
+# cross-tool chains
+cross-tools-*
+
 # ttylinux build system
 ttylinux-build/Site
 ttylinux-build/bootloader/uboot/MLO
@@ -26,6 +29,7 @@ ttylinux-build/img/[^.]*
 ttylinux-build/mnt/[^.]*
 ttylinux-build/pkg-bin/[^.]*
 ttylinux-build/pkg-src/[^.]*
+ttylinux-build/site/[^.]*
 ttylinux-build/sysroot/[^.]*
 ttylinux-build/ttylinux-config.sh
 ttylinux-build/ttylinux-pkglst.txt

@@ -26,6 +26,7 @@
 #
 # CHANGE LOG
 #
+#	18mar12	drj	Call site script even if error in scripts/* script.
 #	19feb12	drj	Rewrite for build process reorganization.
 #	10feb12	drj	Fixed the "SHELL" macro to be bash.
 #	02feb12	drj	Added distdir, distimg, src-dist media.
@@ -238,6 +239,10 @@ ttylinux-pkglst.txt pkglist:	ttylinux-config.sh
 dload:	ttylinux-pkglst.txt scripts/utl-dload.sh
 	@echo "Download ttylinux source packages."
 	@(scripts/utl-dload.sh)
+	@if [ $$? -ne 0 ]; then						\
+		echo "Download FAILED.";				\
+		exit 1;							\
+	fi
 
 kcfg:	scripts/cfg-kernel.sh
 	@(scripts/cfg-kernel.sh)
@@ -312,17 +317,17 @@ clean:	scripts/bld-clean.sh
 		if [ -x site/bld-clean-0.sh ]; then			\
 			(site/bld-clean-0.sh all);			\
 		fi							\
-	fi
-	@(scripts/bld-clean.sh all);					\
-	if [ $$? -ne 0 ]; then						\
-		echo "Clean FAILED.";					\
-		exit 1;							\
-	fi
-	@. ./ttylinux-config.sh;					\
+	fi;								\
+	(scripts/bld-clean.sh all);					\
+	mystat=$$?;							\
 	if [ x"$${TTYLINUX_SITE_SCRIPTS:-}" = x"y" ]; then		\
 		if [ -x site/bld-clean-1.sh ]; then			\
 			(site/bld-clean-1.sh all);			\
 		fi							\
+	fi;								\
+	if [ $$mystat -ne 0 ]; then					\
+		echo "Clean FAILED.";					\
+		exit 1;							\
 	fi
 	@rm -f var/run/init
 	@rm -f var/run/packages
@@ -342,17 +347,17 @@ kclean:	scripts/bld-clean.sh
 		if [ -x site/bld-clean-0.sh ]; then			\
 			(site/bld-clean-0.sh kernel);			\
 		fi							\
-	fi
-	@(scripts/bld-clean.sh kernel);					\
-	if [ $$? -ne 0 ]; then						\
-		echo "Clean FAILED.";					\
-		exit 1;							\
-	fi
-	@. ./ttylinux-config.sh;					\
+	fi;								\
+	(scripts/bld-clean.sh kernel);					\
+	mystat=$$?;							\
 	if [ x"$${TTYLINUX_SITE_SCRIPTS:-}" = x"y" ]; then		\
 		if [ -x site/bld-clean-1.sh ]; then			\
 			(site/bld-clean-1.sh kernel);			\
 		fi							\
+	fi;								\
+	if [ $$mystat -ne 0 ]; then					\
+		echo "Clean FAILED.";					\
+		exit 1;							\
 	fi
 	@rm -f var/run/kernel
 	@rm -f var/run/fsys
@@ -370,17 +375,17 @@ pclean:	scripts/bld-clean.sh
 		if [ -x site/bld-clean-0.sh ]; then			\
 			(site/bld-clean-0.sh packages);			\
 		fi							\
-	fi
-	@(scripts/bld-clean.sh packages);				\
-	if [ $$? -ne 0 ]; then						\
-		echo "Clean FAILED.";					\
-		exit 1;							\
-	fi
-	@. ./ttylinux-config.sh;					\
+	fi;								\
+	(scripts/bld-clean.sh packages);				\
+	mystat=$$?;							\
 	if [ x"$${TTYLINUX_SITE_SCRIPTS:-}" = x"y" ]; then		\
 		if [ -x site/bld-clean-1.sh ]; then			\
 			(site/bld-clean-1.sh packages);			\
 		fi							\
+	fi;								\
+	if [ $$mystat -ne 0 ]; then					\
+		echo "Clean FAILED.";					\
+		exit 1;							\
 	fi
 	@rm -f var/run/packages
 	@rm -f var/run/fsys
@@ -401,14 +406,15 @@ init:	scripts/bld-init.sh
 		fi							\
 	fi;								\
 	(scripts/bld-init.sh);						\
-	if [ $$? -ne 0 ]; then						\
-		echo "Initialize FAILED.";				\
-		exit 1;							\
-	fi;								\
+	mystat=$$?;							\
 	if [ x"$${TTYLINUX_SITE_SCRIPTS:-}" = x"y" ]; then		\
 		if [ -x site/bld-init-1.sh ]; then			\
 			(site/bld-init-1.sh);				\
 		fi							\
+	fi;								\
+	if [ $$mystat -ne 0 ]; then					\
+		echo "Initialize FAILED.";				\
+		exit 1;							\
 	fi;								\
 	echo "$${TTYLINUX_PLATFORM}" >var/run/init
 
@@ -422,14 +428,15 @@ pkgs:	ttylinux-pkglst.txt var/run/init is_build_coherent scripts/bld-packages.sh
 		fi							\
 	fi;								\
 	(scripts/bld-packages.sh);					\
-	if [ $$? -ne 0 ]; then						\
-		echo "Build FAILED.";					\
-		exit 1;							\
-	fi;								\
+	mystat=$$?;							\
 	if [ x"$${TTYLINUX_SITE_SCRIPTS:-}" = x"y" ]; then		\
 		if [ -x site/bld-packages-1.sh ]; then			\
 			(site/bld-packages-1.sh);			\
 		fi							\
+	fi;								\
+	if [ $$mystat -ne 0 ]; then					\
+		echo "Build FAILED.";					\
+		exit 1;							\
 	fi
 	@touch var/run/packages
 
@@ -443,14 +450,15 @@ pkgs_:	ttylinux-pkglst.txt var/run/init is_build_coherent scripts/bld-packages.s
 		fi							\
 	fi;								\
 	(scripts/bld-packages.sh continue);				\
-	if [ $$? -ne 0 ]; then						\
-		echo "Build FAILED.";					\
-		exit 1;							\
-	fi;								\
+	mystat=$$?;							\
 	if [ x"$${TTYLINUX_SITE_SCRIPTS:-}" = x"y" ]; then		\
 		if [ -x site/bld-packages-1.sh ]; then			\
 			(site/bld-packages-1.sh);			\
 		fi							\
+	fi;								\
+	if [ $$mystat -ne 0 ]; then					\
+		echo "Build FAILED.";					\
+		exit 1;							\
 	fi
 	@touch var/run/packages
 
@@ -464,14 +472,15 @@ kernel:	scripts/bld-kernel.sh
 		fi							\
 	fi;								\
 	(scripts/bld-kernel.sh);					\
-	if [ $$? -ne 0 ]; then						\
-		echo "Kernel FAILED.";					\
-		exit 1;							\
-	fi;								\
+	mystat=$$?;							\
 	if [ x"$${TTYLINUX_SITE_SCRIPTS:-}" = x"y" ]; then		\
 		if [ -x site/bld-kernel-1.sh ]; then			\
 			(site/bld-kernel-1.sh);				\
 		fi							\
+	fi;								\
+	if [ $$mystat -ne 0 ]; then					\
+		echo "Kernel FAILED.";					\
+		exit 1;							\
 	fi
 	@touch var/run/kernel
 
@@ -485,14 +494,15 @@ fsys:	var/run/packages is_build_coherent scripts/bld-fsys.sh
 		fi							\
 	fi;								\
 	(scripts/bld-fsys.sh);						\
-	if [ $$? -ne 0 ]; then						\
-		echo "File system initrd FAILED.";			\
-		exit 1;							\
-	fi;								\
+	mystat=$$?;							\
 	if [ x"$${TTYLINUX_SITE_SCRIPTS:-}" = x"y" ]; then		\
 		if [ -x site/bld-fsys-1.sh ]; then			\
 			(site/bld-fsys-1.sh);				\
 		fi							\
+	fi;								\
+	if [ $$mystat -ne 0 ]; then					\
+		echo "File system initrd FAILED.";			\
+		exit 1;							\
 	fi
 	@touch var/run/fsys
 
@@ -506,14 +516,15 @@ distdir:	var/run/fsys var/run/kernel scripts/bld-distdir.sh
 		fi							\
 	fi;								\
 	(scripts/bld-distdir.sh);					\
-	if [ $$? -ne 0 ]; then						\
-		echo "Distribution directory FAILED.";			\
-		exit 1;							\
-	fi;								\
+	mystat=$$?;							\
 	if [ x"$${TTYLINUX_SITE_SCRIPTS:-}" = x"y" ]; then		\
 		if [ -x site/bld-distdir-1.sh ]; then			\
 			(site/bld-distdir-1.sh);			\
 		fi							\
+	fi;								\
+	if [ $$mystat -ne 0 ]; then					\
+		echo "Distribution directory FAILED.";			\
+		exit 1;							\
 	fi
 	@touch var/run/distdir
 
@@ -527,14 +538,15 @@ distimg:	var/run/distdir scripts/bld-distimg.sh
 		fi							\
 	fi;								\
 	(scripts/bld-distimg.sh);					\
-	if [ $$? -ne 0 ]; then						\
-		echo "Distribution image FAILED.";			\
-		exit 1;							\
-	fi;								\
+	mystat=$$?;							\
 	if [ x"$${TTYLINUX_SITE_SCRIPTS:-}" = x"y" ]; then		\
 		if [ -x site/bld-distimg-1.sh ]; then			\
 			(site/bld-distimg-1.sh);			\
 		fi							\
+	fi;								\
+	if [ $$mystat -ne 0 ]; then					\
+		echo "Distribution image FAILED.";			\
+		exit 1;							\
 	fi
 	@touch var/run/distimg
 

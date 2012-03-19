@@ -53,6 +53,7 @@
 #
 # CHANGE LOG
 #
+#	18mar12	drj	Track the failed package downloads and report on them.
 #	14mar12	drj	Made a better ncpus setting.
 #	24feb12	drj	Remove <path>/.. from CROSS_TOOL_DIR.
 #	19feb12	drj	Added text manifest of tool chain components.
@@ -64,9 +65,18 @@
 # *****************************************************************************
 
 
-
 # *************************************************************************** #
 #                                                                             #
+# G L O B A L   D A T A                                                       #
+#                                                                             #
+# *************************************************************************** #
+
+G_MISSED_PKG[0]=""
+G_MISSED_URL[0]=""
+G_NMISSING=0
+
+
+# *************************************************************************** #
 # S U B R O U T I N E S                                                       #
 #                                                                             #
 # *************************************************************************** #
@@ -180,6 +190,9 @@ if [[ "${loadedDn}" = "yes" ]]; then
 	rm -f "${fileName}.download.log"
 else
 	echo "FAILED."
+	G_MISSED_PKG[${G_NMISSING}]="${fileName}${ext}"
+	G_MISSED_URL[${G_NMISSING}]="${url}"
+	G_NMISSING=$((${G_NMISSING} + 1))
 fi
 
 popd >/dev/null 2>&1
@@ -712,6 +725,40 @@ xbt_get_file "${XBT_GCC}"      ${XBT_GCC_URL}
 xbt_get_file "${XBT_LIBC}"     ${XBT_LIBC_URL}
 xbt_get_file "${XBT_LIBC_P}"   ${XBT_LIBC_P_URL}
 xbt_get_file "${XBT_LINUX}"    ${XBT_LINUX_URL}
+
+if [[ ${G_NMISSING} != 0 ]]; then
+	echo "Oops -- missing ${G_NMISSING} packages."
+	echo ""
+	echo -e "${TEXT_BRED}Error${TEXT_NORM}:"
+	echo "At least one source package failed to download.  If all source   "
+	echo "packages failed to download then check your Internet access.     "
+	echo "Listed below are the missing source package name(s) and the last "
+	echo "URL used to find the package.  Likely failure possibilities are: "
+	echo "=> The URL is wrong, maybe it has changed.                       "
+	echo "=> The source package name is no longer at the URL, maybe the    "
+	echo "   version name has changed at the URL.                          "
+	echo ""
+	echo "You can use your web browser to look for the package, and maybe  "
+	echo "use Google to look for an alternate site hosting the source,     "
+	echo "package, or you can download a ttylinux source distribution ISO  "
+	echo "that has the relevant source packages from http://ttylinux.net/  "
+	echo "-- remember, the architecture or CPU in the ttylinux source ISO  "
+	echo "   name does not matter, as the source packages are just source  "
+	echo "   code for any supported architecture."
+	echo ""
+	while [[ ${G_NMISSING} > 0 ]]; do
+		G_NMISSING=$((${G_NMISSING} - 1))
+		echo ${G_MISSED_PKG[${G_NMISSING}]}
+		echo ${G_MISSED_URL[${G_NMISSING}]}
+		unset G_MISSED_PKG[${G_NMISSING}]
+		unset G_MISSED_URL[${G_NMISSING}]
+		if [[ ${G_NMISSING} != 0 ]]; then
+			echo -e "${TEXT_BBLUE}-----${TEXT_NORM}"
+		fi
+	done
+	unset G_NMISSING
+	echo ""
+fi
 
 K_ERR=0 # Expect xbt_chk_file() to set K_ERR=1 on error.
 

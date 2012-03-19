@@ -29,6 +29,7 @@
 #
 # CHANGE LOG
 #
+#	18mar12	drj	Track the failed package downloads and report on them.
 #	15feb12	drj	Rewrite for build process reorganization.
 #	16nov10	drj	Miscellaneous fussing.
 #	01apr10	drj	File creation.
@@ -137,6 +138,9 @@ if [[ "${loadedDn}" == "yes" ]]; then
 	chmod 600 ${fileName}.${fileTag}
 else
 	echo "FAILED"
+	G_MISSED_PKG[${G_NMISSING}]="${fileName}.${fileTag}"
+	G_MISSED_URL[${G_NMISSING}]="${url}"
+	G_NMISSING=$((${G_NMISSING} + 1))
 fi
 
 popd >/dev/null 2>&1
@@ -160,6 +164,10 @@ return 0
 K_CACHEDIR=~/Download
 K_PKGLIST="ttylinux-pkglst.txt"
 
+G_MISSED_PKG[0]=""
+G_MISSED_URL[0]=""
+G_NMISSING=0
+
 source ./ttylinux-config.sh    # target build configuration
 source ./scripts/_functions.sh # build support
 
@@ -170,16 +178,53 @@ dist_config_setup || exit 1
 # Main Program
 # *****************************************************************************
 
-egrep -v "^[[:space:]]*(#|$)" ${K_PKGLIST} | while read name pad tag url; do
+echo "i> Getting source code packages [be patient, this will not lock up]."
+echo "i> Local cache directory: ${K_CACHEDIR}"
+
+while read name pad tag url; do
+	[[ -z "${name}"         ]] && continue || true
+	[[ "${name:0:1}" == "#" ]] && continue || true
 	dload_get_file ${name} ${tag} ${url}
-done
+done <${K_PKGLIST}
+
+if [[ ${G_NMISSING} != 0 ]]; then
+	echo "Oops -- missing ${G_NMISSING} packages."
+	echo ""
+	echo -e "${TEXT_BRED}Error${TEXT_NORM}:"
+	echo "At least one source package failed to download.  If all source   "
+	echo "packages failed to download then check your Internet access.     "
+	echo "Listed below are the missing source package name(s) and the last "
+	echo "URL used to find the package.  Likely failure possibilities are: "
+	echo "=> The URL is wrong, maybe it has changed.                       "
+	echo "=> The source package name is no longer at the URL, maybe the    "
+	echo "   version name has changed at the URL.                          "
+	echo ""
+	echo "You can use your web browser to look for the package, and maybe  "
+	echo "use Google to look for an alternate site hosting the source,     "
+	echo "package, or you can download a ttylinux source distribution ISO  "
+	echo "that has the relevant source packages from http://ttylinux.net/  "
+	echo "-- remember, the architecture or CPU in the ttylinux source ISO  "
+	echo "   name does not matter, as the source packages are just source  "
+	echo "   code for any supported architecture."
+	echo ""
+	while [[ ${G_NMISSING} > 0 ]]; do
+		G_NMISSING=$((${G_NMISSING} - 1))
+		echo ${G_MISSED_PKG[${G_NMISSING}]}
+		echo ${G_MISSED_URL[${G_NMISSING}]}
+		if [[ ${G_NMISSING} != 0 ]]; then
+			echo -e "${TEXT_BBLUE}-----${TEXT_NORM}"
+		fi
+	done
+	echo ""
+	exit 1
+fi
 
 
 # *****************************************************************************
 # Exit with Status
 # *****************************************************************************
 
-exit $?
+exit 0
 
 
 # end of file
