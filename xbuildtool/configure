@@ -6,7 +6,7 @@
 # This file IS part of the ttylinux xbuildtool software.
 # The license which this software falls under is GPLv2 as follows:
 #
-# Copyright (C) 2008-2010 Douglas Jerome <douglas@ttylinux.org>
+# Copyright (C) 2008-2012 Douglas Jerome <douglas@ttylinux.org>
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -37,6 +37,7 @@
 #
 # CHANGE LOG
 #
+#	18mar12	drj	Add git support for empty bin-link/ directory.
 #	29dec10	drj	Re-wrote ttylinux cross-tools setup.sh for xbuildtool.
 #	20dec10	drj	Comment updates.
 #	08apr10	drj	Added *awk checks.
@@ -200,6 +201,7 @@ echo "MACHTYPE: ${MACHTYPE}"
 
 [[ -d "bin-link" ]] && rm --force --recursive "bin-link"
 mkdir "bin-link"
+touch "bin-link/.gitignore"
 
 xbt_prog_link "ar"
 xbt_prog_link "as"
