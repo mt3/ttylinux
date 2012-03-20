@@ -186,9 +186,11 @@ mkdir "${TTYLINUX_MNT_DIR}/var"
 mount -t ext4 "${sdCardDev}p3" "${TTYLINUX_MNT_DIR}/var" >/dev/null 2>&1
 echo "DONE"
 
+echo ""
 echo "** Start installing packages."
 package_installer "sdcard/packages" "${TTYLINUX_MNT_DIR}"
 echo "** Done installing packages."
+echo ""
 
 echo -n "=> Fix file system for persistent boot ..... "
 l1="/dev/mmcblk0p2 /        ext4     defaults                    0 0"
@@ -198,6 +200,7 @@ sed --in-place \
 	"${TTYLINUX_MNT_DIR}/etc/fstab"
 unset l1
 unset l2
+touch "${TTYLINUX_MNT_DIR}/etc/.norootfsck"
 echo "DONE"
 
 echo -n "=> File system usage: "

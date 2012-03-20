@@ -1,0 +1,9 @@
+lib/libblkid.so.1
+lib/libblkid.so.1.1.0
+sbin/blkid
+sbin/findfs
+sbin/losetup
+usr/include/blkid/blkid.h
+usr/lib/libblkid.a
+usr/lib/libblkid.so
+usr/lib/pkgconfig/blkid.pc

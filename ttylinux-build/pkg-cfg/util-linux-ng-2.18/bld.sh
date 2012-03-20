@@ -38,19 +38,8 @@ PKG_VERSION="2.18"
 # ******************************************************************************
 
 pkg_patch() {
-
-PKG_STATUS="Unspecified error -- check the ${PKG_NAME} build log"
-
-# The FHS recommends using the /var/lib/hwclock directory instead of the usual
-# /etc directory as the location for the adjtime file.  To make the hwclock
-# program FHS-compliant, run the following:
-# sed -e 's@etc/adjtime@var/lib/hwclock/adjtime@g' \
-#	-i $(grep -rl '/etc/adjtime' .)
-# mkdir -pv /var/lib/hwclock
-
 PKG_STATUS=""
 return 0
-
 }
 
 
@@ -61,6 +50,13 @@ return 0
 pkg_configure() {
 
 PKG_STATUS="Unspecified error -- check the ${PKG_NAME} build log"
+
+# The FHS recommends using the /var/lib/hwclock directory instead of the usual
+# /etc directory as the location for the adjtime file.  To make the hwclock
+# program FHS-compliant, run the following:
+# sed -e 's@etc/adjtime@var/lib/hwclock/adjtime@g' \
+#	-i $(grep -rl '/etc/adjtime' .)
+# mkdir -pv /var/lib/hwclock
 
 # clfs:
 # --enable-login-utils

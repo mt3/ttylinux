@@ -117,13 +117,12 @@ _file=""
 # Try to download the file from the urls.
 #
 rm -f "${fileName}.download.log"
->"${fileName}.download.log"
 for url in "$@"; do
 	_file="${url}/${fileName}.${fileTag}"
 	if [[ "${loadedDn}" == "no" ]]; then
 		(${_wget} --passive-ftp "${_file}" \
 		|| ${_wget} "${_file}" \
-		|| true) >>"${fileName}.download.log" 2>&1
+		|| true) >"${fileName}.download.log" 2>&1
 		if [[ -f "${fileName}.${fileTag}" ]]; then
 			loadedDn="yes"
 		fi

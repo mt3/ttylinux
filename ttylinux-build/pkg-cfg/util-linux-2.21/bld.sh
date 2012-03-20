@@ -25,12 +25,12 @@
 # Definitions
 # ******************************************************************************
 
-PKG_URL="ftp://ftp.samba.org/pub/ppp/"
-PKG_TAR="ppp-2.4.5.tar.gz"
+PKG_URL="http://www.kernel.org/pub/linux/utils/util-linux/v2.21"
+PKG_TAR="util-linux-2.21.tar.bz2"
 PKG_SUM=""
 
-PKG_NAME="ppp"
-PKG_VERSION="2.4.5"
+PKG_NAME="util-linux"
+PKG_VERSION="2.21"
 
 
 # ******************************************************************************
@@ -38,21 +38,8 @@ PKG_VERSION="2.4.5"
 # ******************************************************************************
 
 pkg_patch() {
-
-local patchDir="${TTYLINUX_PKGCFG_DIR}/${PKG_NAME}-${PKG_VERSION}/patch"
-local patchFile=""
-
-PKG_STATUS="Unspecified error -- check the ${PKG_NAME} build log"
-
-#cd "${PKG_NAME}-${PKG_VERSION}" # ppp patches are applied above the dir.
-for patchFile in "${patchDir}"/*; do
-	[[ -r "${patchFile}" ]] && patch -p0 <"${patchFile}"
-done
-#cd ..
-
 PKG_STATUS=""
 return 0
-
 }
 
 
@@ -63,6 +50,30 @@ return 0
 pkg_configure() {
 
 PKG_STATUS="Unspecified error -- check the ${PKG_NAME} build log"
+
+# The FHS recommends using the /var/lib/hwclock directory instead of the usual
+# /etc directory as the location for the adjtime file.  To make the hwclock
+# program FHS-compliant, run the following:
+# sed -e 's@etc/adjtime@var/lib/hwclock/adjtime@g' \
+#	-i $(grep -rl '/etc/adjtime' .)
+# mkdir -pv /var/lib/hwclock
+
+# clfs:
+# --enable-login-utils
+# --disable-makeinstall-chown
+
+# lfs:
+# --enable-arch  Enables building the arch program
+# --enable-partx Enables building the addpart, delpart and partx programs
+# --enable-write Enables building the write program
+
+#  --disable-libuuid       do not build libuuid and uuid utilities
+#  --disable-uuidd         do not build the uuid daemon
+#  --disable-libblkid      do not build libblkid and blkid utilities
+#  --disable-libmount      do not build libmount
+
+# freak-ass magic from https://lkml.org/lkml/2012/2/24/337
+# => scanf_cv_alloc_modifier=as ./configure ...
 
 cd "${PKG_NAME}-${PKG_VERSION}"
 source "${TTYLINUX_XTOOL_DIR}/_xbt_env_set"
@@ -77,10 +88,28 @@ RANLIB="${XBT_RANLIB}" \
 SIZE="${XBT_SIZE}" \
 STRIP="${XBT_STRIP}" \
 CFLAGS="${TTYLINUX_CFLAGS}" \
+scanf_cv_alloc_modifier=as \
 ./configure \
 	--build=${MACHTYPE} \
 	--host=${XBT_TARGET} \
-	--prefix=/usr
+	--disable-agetty \
+	--disable-cramfs \
+	--disable-fallocate \
+	--disable-fsck \
+	--disable-kill \
+	--disable-libmount \
+	--disable-libuuid \
+	--disable-mount \
+	--disable-mountpoint \
+	--disable-partx \
+	--disable-pivot_root \
+	--disable-rename \
+	--disable-schedutils \
+	--disable-switch_root \
+	--disable-unshare \
+	--disable-wall \
+	--disable-makeinstall-chown \
+	--without-ncurses
 source "${TTYLINUX_XTOOL_DIR}/_xbt_env_clr"
 cd ..
 
@@ -100,11 +129,7 @@ PKG_STATUS="Unspecified error -- check the ${PKG_NAME} build log"
 
 cd "${PKG_NAME}-${PKG_VERSION}"
 source "${TTYLINUX_XTOOL_DIR}/_xbt_env_set"
-PATH="${XBT_BIN_PATH}:${PATH}" make --jobs=${NJOBS} \
-	AR=${XBT_AR} \
-	CC="${XBT_CC} --sysroot=${TTYLINUX_SYSROOT_DIR}" \
-	COPTS="${TTYLINUX_CFLAGS}" \
-	CROSS_COMPILE=${XBT_TARGET}-
+PATH="${XBT_BIN_PATH}:${PATH}" make --jobs=${NJOBS} CROSS_COMPILE=${XBT_TARGET}-
 source "${TTYLINUX_XTOOL_DIR}/_xbt_env_clr"
 cd ..
 
@@ -120,14 +145,40 @@ return 0
 
 pkg_install() {
 
-local instCmd="install --owner=0"
-
 PKG_STATUS="Unspecified error -- check the ${PKG_NAME} build log"
 
 cd "${PKG_NAME}-${PKG_VERSION}"
 source "${TTYLINUX_XTOOL_DIR}/_xbt_env_set"
-${instCmd} --mode=755  --group=0  chat/chat "${TTYLINUX_SYSROOT_DIR}/usr/sbin"
-${instCmd} --mode=4550 --group=40 pppd/pppd "${TTYLINUX_SYSROOT_DIR}/usr/sbin"
+
+_stageDir="${TTYLINUX_BUILD_DIR}/${PKG_NAME}-${PKG_VERSION}"
+mkdir "${_stageDir}"
+
+PATH="${XBT_BIN_PATH}:${PATH}" make \
+	CROSS_COMPILE=${XBT_TARGET}- \
+	DESTDIR=${_stageDir} \
+	install
+
+_dest="${TTYLINUX_SYSROOT_DIR}"
+install --directory --mode=755 --group=0 --owner=0 ${_dest}/usr/include/blkid/
+install --directory --mode=755 --group=0 --owner=0 ${_dest}/usr/lib/pkgconfig/
+instDat="install --mode=644 --group=0 --owner=0"
+instExe="install --mode=755 --group=0 --owner=0"
+${instExe} ${_stageDir}/lib/libblkid.so.1.1.0      ${_dest}/lib/
+${instExe} ${_stageDir}/sbin/blkid                 ${_dest}/sbin/
+${instExe} ${_stageDir}/sbin/findfs                ${_dest}/sbin/
+${instExe} ${_stageDir}/sbin/losetup               ${_dest}/sbin/
+${instDat} ${_stageDir}/usr/include/blkid/blkid.h  ${_dest}/usr/include/blkid/
+${instDat} ${_stageDir}/usr/lib/libblkid.a         ${_dest}/usr/lib/
+${instDat} ${_stageDir}/usr/lib/pkgconfig/blkid.pc ${_dest}/usr/lib/pkgconfig/
+ln --force --symbolic libblkid.so.1.1.0           ${_dest}/lib/libblkid.so.1
+ln --force --symbolic ../../lib/libblkid.so.1.1.0 ${_dest}/usr/lib/libblkid.so
+unset instDat
+unset instExe
+unset _dest
+
+rm --force --recursive ${_stageDir}
+unset _stageDir
+
 source "${TTYLINUX_XTOOL_DIR}/_xbt_env_clr"
 cd ..
 
@@ -147,7 +198,6 @@ return 0
 # ******************************************************************************
 
 pkg_clean() {
-PKG_STATUS="Unspecified error -- check the ${PKG_NAME} build log"
 PKG_STATUS=""
 return 0
 }

@@ -8,6 +8,8 @@
 # rules, are bash.  There is a build script for each package in an appropriate
 # subdirectory in pkg-cfg/
 
+# ------------------------------------------------------------------------------
+
 # List of Shell Variables and Functions
 
 ./ttylinux-config.sh
@@ -110,3 +112,26 @@ scripts/_functions.sh:: dist_root_check()
 scripts/_functions.sh:: build_spec_show()
 scripts/_functions.sh:: ttylinux_target_mount()
 scripts/_functions.sh:: ttylinux_target_umount()
+
+# ------------------------------------------------------------------------------
+
+# Package Dependencies
+
+# Static /dev build -- pc_i486, wrtu54g_tm
+#
+busybox-1.19.3 ...................> losetup
+e2fsprogs-1.42 ...................> blkid, findfs
+
+# udev build -- beagle_bone, mac_g4, pc_i686, pc_x86_64
+#
+# udev-182 needs blkid and it cannot use blkid from e2fsprogs-1.42.1; it can
+# use blkid from util-linux-2.21
+#
+util-linux-2.21 ..................> blkid.h libblkid  :  blkid, findfs, losetup
+                                           |
+e2fsprogs-1.42.1 <-------------------------+
+                                           |
+kmod-6 ..........> kmod.h libkmod          |
+                           |               |
+udev-182 <-----------------+---------------+
+

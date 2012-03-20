@@ -1,0 +1,54 @@
+# vim: syntax=conf
+etc/udev/rules.d/
+etc/udev/rules.d/10-ttylinux.rules
+# etc/udev/rules.d/25-modprobe.rules
+# etc/udev/rules.d/27-firmware.rules
+# etc/udev/rules.d/50-ttylinux.rules
+# etc/udev/rules.d/60-persistent-storage.rules
+# etc/udev/rules.d/80-cdrom.rules
+etc/udev/udev.conf
+lib/firmware
+lib/libudev.so.0
+lib/libudev.so.0.13.1
+lib/udev/accelerometer
+lib/udev/ata_id
+lib/udev/cdrom_id
+lib/udev/collect
+# lib/udev/devices/console
+lib/udev/devices/core
+lib/udev/devices/fd
+# lib/udev/devices/kmsg
+# lib/udev/devices/null
+lib/udev/devices/pts/
+lib/udev/devices/shm/
+lib/udev/devices/stderr
+lib/udev/devices/stdin
+lib/udev/devices/stdout
+lib/udev/mtd_probe
+lib/udev/rule_generator.functions
+lib/udev/rules.d/42-usb-hid-pm.rules
+lib/udev/rules.d/50-udev-default.rules
+lib/udev/rules.d/60-cdrom_id.rules
+lib/udev/rules.d/60-persistent-alsa.rules
+lib/udev/rules.d/60-persistent-input.rules
+lib/udev/rules.d/60-persistent-serial.rules
+lib/udev/rules.d/60-persistent-storage-tape.rules
+lib/udev/rules.d/60-persistent-storage.rules
+lib/udev/rules.d/60-persistent-v4l.rules
+lib/udev/rules.d/61-accelerometer.rules
+lib/udev/rules.d/75-cd-aliases-generator.rules
+lib/udev/rules.d/75-net-description.rules
+lib/udev/rules.d/75-persistent-net-generator.rules
+lib/udev/rules.d/75-probe_mtd.rules
+lib/udev/rules.d/75-tty-description.rules
+lib/udev/rules.d/78-sound-card.rules
+lib/udev/rules.d/80-drivers.rules
+lib/udev/rules.d/95-udev-late.rules
+lib/udev/scsi_id
+lib/udev/udevd
+lib/udev/v4l_id
+lib/udev/write_cd_rules
+lib/udev/write_net_rules
+run/
+usr/bin/udevadm
+usr/lib/libudev.so

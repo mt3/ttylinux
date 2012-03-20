@@ -38,21 +38,8 @@ PKG_VERSION="3.16"
 # ******************************************************************************
 
 pkg_patch() {
-
-local patchDir="${TTYLINUX_PKGCFG_DIR}/${PKG_NAME}-${PKG_VERSION}/patch"
-local patchFile=""
-
-PKG_STATUS="Unspecified error -- check the ${PKG_NAME} build log"
-
-cd "${PKG_NAME}-${PKG_VERSION}"
-for patchFile in "${patchDir}"/*; do
-	[[ -r "${patchFile}" ]] && patch -p0 <"${patchFile}"
-done
-cd ..
-
 PKG_STATUS=""
 return 0
-
 }
 
 

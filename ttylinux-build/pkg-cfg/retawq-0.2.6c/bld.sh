@@ -25,7 +25,7 @@
 # Definitions
 # ******************************************************************************
 
-PKG_URL="http://prdownloads.sourceforge.net/retawq/"
+PKG_URL="http://sourceforge.net/projects/retawq/files/retawq/retawq-0.2.6c/"
 PKG_TAR="retawq-0.2.6c.tar.gz"
 PKG_SUM=""
 

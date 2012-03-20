@@ -25,12 +25,12 @@
 # Definitions
 # ******************************************************************************
 
-PKG_URL="http://yaboot.ozlabs.org/releases/"
-PKG_TAR="yaboot-1.3.13.tar.gz"
+PKG_URL="http://www.kernel.org/pub/linux/utils/kernel/kmod/"
+PKG_TAR="kmod-6.tar.bz2"
 PKG_SUM=""
 
-PKG_NAME="yaboot"
-PKG_VERSION="1.3.13"
+PKG_NAME="kmod"
+PKG_VERSION="6"
 
 
 # ******************************************************************************
@@ -38,21 +38,8 @@ PKG_VERSION="1.3.13"
 # ******************************************************************************
 
 pkg_patch() {
-
-local patchDir="${TTYLINUX_PKGCFG_DIR}/${PKG_NAME}-${PKG_VERSION}/patch"
-local patchFile=""
-
-PKG_STATUS="Unspecified error -- check the ${PKG_NAME} build log"
-
-#cd "${PKG_NAME}-${PKG_VERSION}" # yaboot patches are applied above the dir.
-for patchFile in "${patchDir}"/*; do
-	[[ -r "${patchFile}" ]] && patch -p0 <"${patchFile}"
-done
-#cd ..
-
 PKG_STATUS=""
 return 0
-
 }
 
 
@@ -61,8 +48,37 @@ return 0
 # ******************************************************************************
 
 pkg_configure() {
+
+PKG_STATUS="Unspecified error -- check the ${PKG_NAME} build log"
+
+cd "${PKG_NAME}-${PKG_VERSION}"
+source "${TTYLINUX_XTOOL_DIR}/_xbt_env_set"
+AR="${XBT_AR}" \
+AS="${XBT_AS} --sysroot=${TTYLINUX_SYSROOT_DIR}" \
+CC="${XBT_CC} --sysroot=${TTYLINUX_SYSROOT_DIR}" \
+CXX="${XBT_CXX} --sysroot=${TTYLINUX_SYSROOT_DIR}" \
+LD="${XBT_LD} --sysroot=${TTYLINUX_SYSROOT_DIR}" \
+NM="${XBT_NM}" \
+OBJCOPY="${XBT_OBJCOPY}" \
+RANLIB="${XBT_RANLIB}" \
+SIZE="${XBT_SIZE}" \
+STRIP="${XBT_STRIP}" \
+CFLAGS="${TTYLINUX_CFLAGS}" \
+./configure \
+	--build=${MACHTYPE} \
+	--host=${XBT_TARGET} \
+	--prefix=/usr \
+	--bindir=/bin \
+	--libdir=/lib \
+	--sysconfdir=/etc \
+	--without-xz \
+	--without-zlib
+source "${TTYLINUX_XTOOL_DIR}/_xbt_env_clr"
+cd ..
+
 PKG_STATUS=""
 return 0
+
 }
 
 
@@ -76,10 +92,7 @@ PKG_STATUS="Unspecified error -- check the ${PKG_NAME} build log"
 
 cd "${PKG_NAME}-${PKG_VERSION}"
 source "${TTYLINUX_XTOOL_DIR}/_xbt_env_set"
-PATH="${XBT_BIN_PATH}:${PATH}" make \
-	CC="${XBT_CC} --sysroot=${TTYLINUX_SYSROOT_DIR}" \
-	CROSS_COMPILE=${XBT_TARGET}- \
-	LD=${XBT_LD}
+PATH="${XBT_BIN_PATH}:${PATH}" make --jobs=${NJOBS} CROSS_COMPILE=${XBT_TARGET}-
 source "${TTYLINUX_XTOOL_DIR}/_xbt_env_clr"
 cd ..
 
@@ -100,16 +113,19 @@ PKG_STATUS="Unspecified error -- check the ${PKG_NAME} build log"
 cd "${PKG_NAME}-${PKG_VERSION}"
 source "${TTYLINUX_XTOOL_DIR}/_xbt_env_set"
 PATH="${XBT_BIN_PATH}:${PATH}" make \
-	CC="${XBT_CC} --sysroot=${TTYLINUX_SYSROOT_DIR}" \
 	CROSS_COMPILE=${XBT_TARGET}- \
-	LD=${XBT_LD} \
-	STRIP=${XBT_STRIP} \
-	ROOT=${TTYLINUX_SYSROOT_DIR} \
-	PREFIX=usr \
-	MANDIR=share/man \
+	DESTDIR=${TTYLINUX_SYSROOT_DIR} \
+	INSTALL=install \
 	install
 source "${TTYLINUX_XTOOL_DIR}/_xbt_env_clr"
 cd ..
+
+ln --symbolic ../bin/kmod ${TTYLINUX_SYSROOT_DIR}/sbin/depmod
+ln --symbolic ../bin/kmod ${TTYLINUX_SYSROOT_DIR}/sbin/insmod
+ln --symbolic ../bin/kmod ${TTYLINUX_SYSROOT_DIR}/sbin/modinfo
+ln --symbolic ../bin/kmod ${TTYLINUX_SYSROOT_DIR}/sbin/modprobe
+ln --symbolic ../bin/kmod ${TTYLINUX_SYSROOT_DIR}/sbin/rmmod
+ln --symbolic kmod        ${TTYLINUX_SYSROOT_DIR}/bin/lsmod
 
 if [[ -d "rootfs/" ]]; then
 	find "rootfs/" ! -type d -exec touch {} \;
@@ -127,6 +143,7 @@ return 0
 # ******************************************************************************
 
 pkg_clean() {
+PKG_STATUS="Unspecified error -- check the ${PKG_NAME} build log"
 PKG_STATUS=""
 return 0
 }
