@@ -522,7 +522,7 @@ K_BLD_ENV_FILE="./xbt-build-env.sh"
 K_CACHEDIR=~/Download
 K_CONSOLE_FD=1
 K_ERR=0
-K_EXT=".tar.bz2 .tar.gz .tgz"
+K_EXT=".tar.bz2 .tar.gz .tgz .tar.xz"
 
 TEXT_BRED="\E[1;31m"    # bold+red
 TEXT_BGREEN="\E[1;32m"  # bold+green

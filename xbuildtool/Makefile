@@ -88,7 +88,7 @@ help:
 	@echo "make powerpc-2.13-gnu .......... mac_g4      (linux-2.6.38.1)"
 	@echo "make i486-2.9-gnu .............. pc_i486     (linux-2.6.34.6)"
 	@echo "make i686-2.13-gnu ............. pc_i686     (linux-2.6.38.1)"
-	@echo "make x86_64-2.13-gnu ........... pc_x86_64   (linux-2.6.38.1)"
+	@echo "make x86_64-2.36-gnu ........... pc_x86_64   (linux-5.19.2)"
 	@echo ""
 
 setup:
@@ -125,7 +125,7 @@ i686-2.13-gnu:
 	cp config/ttyl-pc_i686.cfg xbt-build-config.sh
 	./scripts/_build-toolchain.sh
 
-x86_64-2.13-gnu:
+x86_64-2.36-gnu:
 	rm -f xbt-build-config.sh
 	cp config/ttyl-pc_x86_64.cfg xbt-build-config.sh
 	./scripts/_build-toolchain.sh
